@@ -143,7 +143,8 @@ test("parameter auto/always/never remain available and preserve is limited to pa
   check(source, 'event Changed(\n  first int,\n  second int)\n', { wrap: { parameters: 'always' } }, 'fcc');
   check(source, 'event Changed(\n  first int,\n  second int)\n', { printWidth: 20, wrap: { parameters: 'auto' } }, 'fcc');
   assert.ok(formatSource(source, 'fcg', { wrap: { calls: 'preserve' } }));
-  for (const name of ['collections', 'conditions']) {
+  assert.ok(formatSource(source, 'fcg', { wrap: { collections: 'preserve' } }));
+  for (const name of ['conditions']) {
     assert.throws(() => formatSource(source, 'fcc', { wrap: { [name]: 'preserve' } }), TypeError);
   }
 });
@@ -166,4 +167,17 @@ test("call wrapping preserves single-line calls by default and reflows when wrap
   const formattedAuto = formatSource(singleLineCall, 'fcg', { printWidth: 80, wrap: { calls: 'auto' } });
   assert.equal(formattedAuto.diagnostics.length, 0);
   assert.ok(formattedAuto.output.includes('UIUtils.GetHUDWidget(\n      thisEntity<Player>,\n      _ActivitiesHUD,\n      Res.Activities[EResKeyActivities.Event]) as entity<UIWidget>'));
+});
+
+test("multiline collections stay multiline by default and do not collapse into single line", () => {
+  const multilineMap = 'import "StdLibrary.fcc" as StdLibrary\n\ngraph Demo {\n  func Run() {\n    STATECHAT Map<int, string> = {\n      1: "default",\n      2: "intro",\n      3: "tip",\n      4: "wish",\n      5: "wishFail",\n      6: "wishSuccess",\n    }\n  }\n}\n';
+  const formatted = formatSource(multilineMap, 'fcg');
+  assert.equal(formatted.diagnostics.length, 0);
+  assert.ok(formatted.output.includes('STATECHAT Map<int, string> = {\n      1: "default",\n      2: "intro",\n      3: "tip",\n      4: "wish",\n      5: "wishFail",\n      6: "wishSuccess",\n    }'), formatted.output);
+
+  // But flat collections that fit printWidth still stay flat
+  const flatMap = 'import "StdLibrary.fcc" as StdLibrary\n\ngraph Demo {\n  func Run() {\n    var m = Map<int, string>{1: "a", 2: "b"}\n  }\n}\n';
+  const formattedFlat = formatSource(flatMap, 'fcg');
+  assert.equal(formattedFlat.diagnostics.length, 0);
+  assert.ok(formattedFlat.output.includes('var m = Map<int, string>{1: "a", 2: "b"}'), formattedFlat.output);
 });

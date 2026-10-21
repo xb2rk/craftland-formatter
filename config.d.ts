@@ -17,7 +17,7 @@ export interface FormatterSettings {
   wrap?: {
     calls?: "preserve" | "auto" | "always" | "never";
     parameters?: "preserve" | "auto" | "always" | "never";
-    collections?: "auto" | "always" | "never";
+    collections?: "preserve" | "auto" | "always" | "never";
     conditions?: "auto" | "always" | "never";
   };
   spacing?: {

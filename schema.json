@@ -156,6 +156,7 @@
           ],
           "type": "string",
           "enum": [
+            "preserve",
             "auto",
             "always",
             "never"
@@ -506,6 +507,7 @@
                     ],
                     "type": "string",
                     "enum": [
+                      "preserve",
                       "auto",
                       "always",
                       "never"

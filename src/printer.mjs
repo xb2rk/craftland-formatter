@@ -85,7 +85,7 @@ function resolveStyle(source, requested) {
   }
 
   for (const [name, mode] of Object.entries(style.wrap)) {
-    const allowed = ["parameters", "calls"].includes(name) ? ["preserve", "auto", "always", "never"] : ["auto", "always", "never"];
+    const allowed = ["parameters", "calls", "collections"].includes(name) ? ["preserve", "auto", "always", "never"] : ["auto", "always", "never"];
     if (!allowed.includes(mode)) {
       throw new TypeError(`wrap.${name} must be ${allowed.join(", ")}`);
     }
@@ -613,7 +613,13 @@ class SyntaxPrinter {
     const closing = trailingAllowed ? ifBreak(hardline, padding) : text("");
     const hasSourceBreak = /[\r\n]/.test(this.source.slice(open.end, close.start));
     const callMode = this.style.wrap.calls === "preserve" ? (hasSourceBreak ? "always" : "never") : this.style.wrap.calls;
-    const mode = node.kind === "Collection" || node.kind === "LocalizedString" ? this.style.wrap.collections :
+    let collectionMode = this.style.wrap.collections;
+    if (this.style.wrap.collections === "preserve") {
+      collectionMode = hasSourceBreak ? "always" : "never";
+    } else if (this.style.wrap.collections === "auto" && hasSourceBreak) {
+      collectionMode = "always";
+    }
+    const mode = node.kind === "Collection" || node.kind === "LocalizedString" ? collectionMode :
       ["Signature", "FunctionTypeSignature"].includes(node.kind) ? this.style.wrap.parameters :
       node.kind === "BareCall" || node.kind === "ValueCall" ? callMode : "never";
 
