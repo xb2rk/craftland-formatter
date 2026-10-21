@@ -789,3 +789,30 @@ test("editor uses VS Code configuration settings when .fcfmt.json is absent, and
     editor.dispose();
   }
 }));
+
+test("editor automatically converts EOL without error when buffer EOL differs from project config", () => fixture(async (directory) => {
+  const filePath = join(directory, "EolAuto.fcg");
+  // File is Windows CRLF
+  const source = 'import "StdLibrary.fcc" as StdLibrary\r\n\r\ngraph EolAuto {\r\nfunc Run() {\r\nvar x = 1\r\n}\r\n}\r\n';
+  fs.writeFileSync(filePath, source);
+
+  // Project explicitly configures LF
+  fs.writeFileSync(join(directory, ".fcfmt.json"), JSON.stringify({
+    endOfLine: "lf",
+  }));
+
+  const document = documentAt(filePath, source);
+  document.eol = 2; // 2 = CRLF in VS Code EndOfLine enum
+  const editor = fakeVscode(document);
+
+  try {
+    const edits = editor.state.formattingProvider.provideDocumentFormattingEdits(document);
+    // No error diagnostics emitted
+    assert.equal(editor.state.diagnostics.has(document.uri.toString()), false);
+    // Text edits applied + EndOfLine converted
+    assert.ok(edits.length > 0);
+    assert.ok(edits.some((e) => e.newEol === 1)); // 1 = LF in VS Code EndOfLine enum
+  } finally {
+    editor.dispose();
+  }
+}));

@@ -1,6 +1,6 @@
 {
   "name": "fc-format-v5",
-  "version": "0.9.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "bin": {
@@ -23,10 +23,10 @@
     "lint": "node bin/fclint.mjs",
     "test": "node scripts/test.mjs",
     "test:grammar": "node --test tests/grammar-oracle.test.mjs tests/layout-safety.test.mjs tests/grammar-matrix.test.mjs tests/trivia-safety.test.mjs",
-    "test:syntax": "node --test tests/syntax-phase2.test.mjs tests/grammar-parity.test.mjs",
-    "test:printer": "node --test tests/printer-phase3.test.mjs tests/logical-layout.test.mjs tests/collection-alignment.test.mjs tests/operator-spacing.test.mjs tests/style-parity.test.mjs tests/layout-regressions.test.mjs",
-    "test:cli": "node --test tests/cli-phase4.test.mjs",
-    "test:extension": "node --test tests/extension-phase5.test.mjs",
+    "test:syntax": "node --test tests/syntax.test.mjs tests/grammar-parity.test.mjs",
+    "test:printer": "node --test tests/printer.test.mjs tests/logical-layout.test.mjs tests/collection-alignment.test.mjs tests/operator-spacing.test.mjs tests/style-parity.test.mjs tests/layout-regressions.test.mjs",
+    "test:cli": "node --test tests/cli.test.mjs",
+    "test:extension": "node --test tests/extension.test.mjs",
     "test:extension:host": "node scripts/test-extension-host.mjs",
     "test:extension:vsix": "node scripts/test-extension-host.mjs --vsix",
     "clean": "node scripts/clean.mjs",

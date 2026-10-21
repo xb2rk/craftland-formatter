@@ -492,7 +492,19 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
   context.subscriptions.push(
     vscode.languages.registerDocumentFormattingEditProvider(selector, {
       provideDocumentFormattingEdits(document, options) {
-        return prepareFormat(document, false, options).edits;
+        const prepared = prepareFormat(document, true, options);
+
+        if (prepared.error) {
+          return [];
+        }
+
+        const edits = [...prepared.edits];
+
+        if (prepared.targetEol && vscode.TextEdit?.setEndOfLine) {
+          edits.push(vscode.TextEdit.setEndOfLine(prepared.targetEol));
+        }
+
+        return edits;
       },
     }),
     vscode.languages.registerDocumentRangeFormattingEditProvider(selector, {

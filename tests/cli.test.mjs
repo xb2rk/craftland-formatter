@@ -25,7 +25,7 @@ test("CLI version matches the extension release", () => fixture((directory) => {
 const formatted = 'import "StdLibrary.fcc" as StdLibrary\n\ngraph Demo {\n  func Noop() {}\n}\n';
 
 function fixture(callback) {
-  const directory = fs.mkdtempSync(join(tmpdir(), "fcfmt phase4 "));
+  const directory = fs.mkdtempSync(join(tmpdir(), "fcfmt-cli-"));
 
   try {
     fs.mkdirSync(join(directory, ".git"));

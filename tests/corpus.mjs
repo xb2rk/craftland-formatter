@@ -1,21 +1,41 @@
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadExtensionOracle } from "../src/grammar/extension-oracle.mjs";
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-const projectRoot = resolve(packageRoot, "..", "..");
+
+function resolveProjectRoot() {
+  let dir = packageRoot;
+  for (let i = 0; i < 4; i++) {
+    if (existsSync(join(dir, "Assets", "Scripts"))) {
+      return dir;
+    }
+    dir = dirname(dir);
+  }
+  const fallback = resolve(packageRoot, "..", "PlantsVsZombiesFCC");
+  if (existsSync(join(fallback, "Assets", "Scripts"))) {
+    return fallback;
+  }
+  return null;
+}
+
+const projectRoot = resolveProjectRoot();
 const extensionRoot = dirname(dirname(loadExtensionOracle().path));
 
 const roots = [
-  join(projectRoot, "Assets", "Scripts"),
+  projectRoot ? join(projectRoot, "Assets", "Scripts") : null,
   join(extensionRoot, "library", "release"),
-  join(projectRoot, "Temp", "UGCLanguage", "editorGen"),
-];
+  projectRoot ? join(projectRoot, "Temp", "UGCLanguage", "editorGen") : null,
+].filter(Boolean);
 
 /** Walk only FC source files; the game inventory may change during development. */
 function collectFcFiles(root) {
+  if (!root || !existsSync(root)) {
+    return [];
+  }
+
   const files = [];
 
   for (const entry of readdirSync(root, { withFileTypes: true })) {

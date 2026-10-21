@@ -2,7 +2,7 @@
   "name": "fc-format-v5-vscode",
   "displayName": "Free Fire Craftland Code Formatter",
   "description": "Official-grade code formatter, static linter, and range-formatting engine for Free Fire Craftland (.fcg, .fcc).",
-  "version": "0.9.0",
+  "version": "1.0.1",
   "publisher": "craftland-community",
   "icon": "resources/icon.png",
   "galleryBanner": {
@@ -88,7 +88,7 @@
         "fc-format.endOfLine": {
           "type": "string",
           "enum": ["lf", "crlf", "preserve"],
-          "default": "lf",
+          "default": "preserve",
           "description": "Line ending for generated layout."
         },
         "fc-format.finalNewline": {
