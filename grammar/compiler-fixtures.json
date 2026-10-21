@@ -1,0 +1,198 @@
+[
+  {
+    "name": "empty graph",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {}\n"
+  },
+  {
+    "name": "empty function",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Noop() {}\n}\n"
+  },
+  {
+    "name": "empty if and else",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    if true {} else {}\n  }\n}\n"
+  },
+  {
+    "name": "logical break after operator",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    if true &&\n      false {}\n  }\n}\n"
+  },
+  {
+    "name": "arithmetic break after operator",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var value = 1 +\n      2\n  }\n}\n"
+  },
+  {
+    "name": "multiline function parameters",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Sum(\n    a int,\n    b int) int {\n    return a + b\n  }\n}\n"
+  },
+  {
+    "name": "bare and value calls",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Sum(a int, b int) int { return a + b }\n  func Run() {\n    Sum(\n      1,\n      2,\n    )\n    var total = Sum(\n      1,\n      2)\n  }\n}\n"
+  },
+  {
+    "name": "missing graph import",
+    "kind": "fcg",
+    "source": "graph Demo {}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "else on a new line",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    if true {}\n    else {}\n  }\n}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "value call with isolated closing parenthesis",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Sum(a int, b int) int { return a + b }\n  func Run() {\n    var total = Sum(\n      1,\n      2\n    )\n  }\n}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "UTF-8 BOM before import",
+    "kind": "fcg",
+    "source": "﻿import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "switch statement",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    switch 1 {}\n  }\n}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "multiline list with trailing comma",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var values = List<int>{\n      1,\n      2,\n    }\n  }\n}\n"
+  },
+  {
+    "name": "multiline list without trailing comma",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var values = List<int>{\n      1,\n      2\n    }\n  }\n}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "nested generic break after comma",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  items Map<int,\n    List<string>> = nil\n}\n"
+  },
+  {
+    "name": "wait and start broken calls",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  async func Action(a int, b int) {}\n  async func Run() {\n    wait Action(\n      1,\n      2,\n    )\n    start Action(\n      1,\n      2,\n    )\n  }\n}\n"
+  },
+  {
+    "name": "index closing bracket on its own line",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var values = List<int>{1}\n    var value = values[\n      0\n    ]\n  }\n}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "CRLF comments and raw multiline literal",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\r\n// note  \r\ngraph Demo {\r\n  func Run() {\r\n    var value = `one  \r\ntwo`\r\n  }\r\n}\r\n"
+  },
+  {
+    "name": "return call beside last argument",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Sum(a int, b int) int { return a + b }\n  func Run() int {\n    return Sum(\n      1,\n      2)\n  }\n}\n"
+  },
+  {
+    "name": "return call isolated closing parenthesis",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Sum(a int, b int) int { return a + b }\n  func Run() int {\n    return Sum(\n      1,\n      2\n    )\n  }\n}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "multiline map with trailing comma",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var values = Map<string, int>{\n      \"one\": 1,\n      \"two\": 2,\n    }\n  }\n}\n"
+  },
+  {
+    "name": "multiline map without trailing comma",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var values = Map<string, int>{\n      \"one\": 1,\n      \"two\": 2\n    }\n  }\n}\n",
+    "expectParserSuccess": false,
+    "expectCompilerSuccess": false
+  },
+  {
+    "name": "while and for empty blocks",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    for i = 0, 2, 1 {}\n    while false {}\n  }\n}\n"
+  },
+  {
+    "name": "function pointer type declaration",
+    "kind": "fcc",
+    "source": "define Callback : func(value int) bool\n"
+  },
+  {
+    "name": "postfix updates and repeated unary signs",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var value int = 1\n    value ++\n    value --\n    value += - 1\n    var negative int = - -value\n    var positive int = + +value\n    var same bool = value >= - 1\n    value += (1)\n    var comparison bool = value >= (0)\n  }\n}\n"
+  },
+  {
+    "name": "nested logical assignment and aligned map",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    var firstCondition bool = true\n    var secondCondition bool = false\n    var thirdCondition bool = true\n    var valid bool = firstCondition && (secondCondition || thirdCondition || firstCondition || secondCondition || thirdCondition || firstCondition)\n    if valid && firstCondition || secondCondition || thirdCondition || firstCondition || secondCondition || thirdCondition {}\n    var values = Map<string, int>{\"short\": 1, \"longer\": 2, \"a much longer map key\": 3, \"another map key to exceed the target width\": 4}\n  }\n}\n"
+  },
+  {
+    "name": "continued function-pointer type",
+    "kind": "fcc",
+    "expectParserSuccess": true,
+    "expectCompilerSuccess": true,
+    "source": "define Callback : func(firstVeryLongParameterName int, secondVeryLongParameterName List<object>, out var thirdVeryLongParameterName List<object>) bool\n"
+  },
+  {
+    "name": "commented map and protected source entry",
+    "kind": "fcg",
+    "expectParserSuccess": true,
+    "expectCompilerSuccess": true,
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Fixture {\nfunc Run() {\nvar values = Map<int,int>{\n// small\n1:2, // one\n123:4,\n}\n// fc-format-ignore\n var untouched int=1+2\n}\n}\n"
+  },
+  {
+    "name": "anonymous function with statements",
+    "kind": "fcg",
+    "expectParserSuccess": true,
+    "expectCompilerSuccess": true,
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Fixture {\nfunc Run() {\nvar callback func(value int) int = func(value int) int {\nvar copy=value\nreturn copy\n}\nvar result int=callback(1)\n}\n}\n"
+  },
+  {
+    "name": "preserved function and nested function-type parameter sections",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Fixture {\nfunc Process(first int,\nsecond List<int>, third bool) {}\nfunc Apply(callback func(\nvalue int) int) {}\n}\n"
+  },
+  {
+    "name": "preserved event and function-type parameter sections",
+    "kind": "fcc",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\nevent OnReady(first int,\nsecond int)\ndefine Callback: func(\nvalue int) int\n"
+  },
+  {
+    "name": "long concatenation with fitting nested calls",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Fixture {\nfunc GetActiveCount(key string) int {return 1}\nfunc ToString(value int) string {return \"count\"}\nfunc Run() {\nvar key string = \"pool\"\nLogInfo(\"Client_EntityPool: \" + key + \" available=\" + ToString(GetActiveCount(key)) + \" active=\" + ToString(GetActiveCount(key)))\n}\n}\n"
+  },
+  {
+    "name": "commented collection blank sections",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Fixture {\nfunc Run() {\nvar values = Map<int,int>{1:2, // first\n\n// next section\n\n123:4,\n\n// footer\n\n}\n}\n}\n"
+  },
+  {
+    "name": "raw library import path",
+    "kind": "fcg",
+    "expectParserSuccess": true,
+    "expectCompilerSuccess": true,
+    "source": "import `StdLibrary.fcc` as StdLibrary\ngraph Fixture {}\n"
+  }
+]

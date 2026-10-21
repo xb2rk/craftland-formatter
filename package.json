@@ -1,63 +1,42 @@
 {
-  "name": "fc-format-v4",
-  "version": "0.4.0",
+  "name": "fc-format-v5",
+  "version": "0.9.0",
   "private": true,
-  "description": "Next-generation modular, deterministic formatter and language toolchain for Craftland Studio FC.",
   "type": "module",
-  "engines": {
-    "node": ">=20.19.0"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "bin": {
-    "fc-format-v4": "./dist/cli/format.js"
+    "fcfmt": "./bin/fcfmt.mjs",
+    "fclint": "./bin/fclint.mjs"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./grammar": {
-      "types": "./dist/grammar/index.d.ts",
-      "import": "./dist/grammar/index.js"
-    },
-    "./lex": {
-      "types": "./dist/lex/index.d.ts",
-      "import": "./dist/lex/index.js"
-    },
-    "./syntax": {
-      "types": "./dist/syntax/index.d.ts",
-      "import": "./dist/syntax/index.js"
-    },
-    "./parser": {
-      "types": "./dist/parser/index.d.ts",
-      "import": "./dist/parser/index.js"
-    },
-    "./format": {
-      "types": "./dist/format/index.d.ts",
-      "import": "./dist/format/index.js"
-    },
-    "./imports": {
-      "types": "./dist/imports/index.d.ts",
-      "import": "./dist/imports/index.js"
-    }
+    ".": "./src/printer.mjs",
+    "./config": "./src/config.mjs",
+    "./service": "./src/service.mjs",
+    "./lint": "./src/lint/engine.mjs"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "grammar:generate": "node scripts/gen-token-vocabulary.mjs",
-    "grammar:check": "node scripts/gen-token-vocabulary.mjs --check",
-    "verify:grammar": "npm run grammar:check",
-    "format": "tsx src/cli/format.ts",
-    "format:check": "tsx src/cli/format.ts --check",
-    "ci": "npm run typecheck && npm run test && npm run build"
-  },
-  "devDependencies": {
-    "@types/node": "24.0.0",
-    "tsx": "4.23.13",
-    "typescript": "5.9.3",
-    "vitest": "4.1.11"
+    "format": "node scripts/fcfmt.mjs --write",
+    "format:check": "node scripts/fcfmt.mjs --check",
+    "format:diff": "node scripts/fcfmt.mjs --check --diff",
+    "lint": "node bin/fclint.mjs",
+    "test": "node scripts/test.mjs",
+    "test:grammar": "node --test tests/grammar-oracle.test.mjs tests/layout-safety.test.mjs tests/grammar-matrix.test.mjs tests/trivia-safety.test.mjs",
+    "test:syntax": "node --test tests/syntax-phase2.test.mjs tests/grammar-parity.test.mjs",
+    "test:printer": "node --test tests/printer-phase3.test.mjs tests/logical-layout.test.mjs tests/collection-alignment.test.mjs tests/operator-spacing.test.mjs tests/style-parity.test.mjs tests/layout-regressions.test.mjs",
+    "test:cli": "node --test tests/cli-phase4.test.mjs",
+    "test:extension": "node --test tests/extension-phase5.test.mjs",
+    "test:extension:host": "node scripts/test-extension-host.mjs",
+    "test:extension:vsix": "node scripts/test-extension-host.mjs --vsix",
+    "clean": "node scripts/clean.mjs",
+    "build:extension": "node scripts/build-extension.mjs",
+    "config:generate": "node scripts/gen-config-artifacts.mjs",
+    "config:check": "node scripts/gen-config-artifacts.mjs --check",
+    "bench:printer": "node scripts/bench-printer.mjs",
+    "audit:rollout": "node scripts/audit-rollout.mjs",
+    "probe:grammar": "node scripts/probe-grammar.mjs",
+    "probe:compiler": "node scripts/probe-compiler.mjs",
+    "probe:compiler:formatted": "node scripts/probe-compiler.mjs --formatted"
   }
 }

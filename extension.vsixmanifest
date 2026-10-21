@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Language="en-US" Id="fc-format-v5-vscode" Version="0.9.0" Publisher="craftland-community" />
+    <DisplayName>Free Fire Craftland Code Formatter</DisplayName>
+    <Description xml:space="preserve">Official-grade code formatter, static linter, and range-formatting engine for Free Fire Craftland (.fcg, .fcc).</Description>
+    <Icon>extension/resources/icon.png</Icon>
+    <Tags>ffugclanguage,__ext_fcg,__ext_fcc</Tags>
+    <Categories>Formatters,Linters,Programming Languages</Categories>
+    <Properties><Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.96.0" /></Properties>
+  </Metadata>
+  <Installation><InstallationTarget Id="Microsoft.VisualStudio.Code" /></Installation>
+  <Dependencies />
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true" />
+    <Asset Type="Microsoft.VisualStudio.Services.Content.Details" Path="extension/README.md" Addressable="true" />
+    <Asset Type="Microsoft.VisualStudio.Services.Content.Changelog" Path="extension/dist/docs/CHANGELOG.md" Addressable="true" />
+    <Asset Type="Microsoft.VisualStudio.Services.Icons.Default" Path="extension/resources/icon.png" Addressable="true" />
+  </Assets>
+</PackageManifest>

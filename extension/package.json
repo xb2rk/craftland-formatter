@@ -1,0 +1,185 @@
+{
+  "name": "fc-format-v5-vscode",
+  "displayName": "Free Fire Craftland Code Formatter",
+  "description": "Official-grade code formatter, static linter, and range-formatting engine for Free Fire Craftland (.fcg, .fcc).",
+  "version": "0.9.0",
+  "publisher": "craftland-community",
+  "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#14161b",
+    "theme": "dark"
+  },
+  "keywords": [
+    "freefire",
+    "craftland",
+    "craftland studio",
+    "fc",
+    "fcg",
+    "fcc",
+    "formatter",
+    "linter",
+    "format"
+  ],
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/FC%20Grammar-1.11.0-blue",
+      "href": "https://github.com",
+      "description": "FC Grammar 1.11.0"
+    },
+    {
+      "url": "https://img.shields.io/badge/Dependencies-0%20runtime-brightgreen",
+      "href": "#",
+      "description": "Zero Runtime Dependencies"
+    }
+  ],
+  "private": true,
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Formatters",
+    "Linters",
+    "Programming Languages"
+  ],
+  "activationEvents": ["onStartupFinished", "onLanguage:ffugclanguage"],
+  "main": "./dist/extension.cjs",
+  "contributes": {
+    "jsonValidation": [
+      { "fileMatch": ".fcfmt.json", "url": "./dist/fcfmt.schema.json" }
+    ],
+    "commands": [
+      { "command": "fcfmt.formatDocument", "title": "FC Format v5: Format Document" },
+      { "command": "fcfmt.preview", "title": "FC Format v5: Preview Formatting" },
+      { "command": "fcfmt.explainConfig", "title": "FC Format v5: Explain Configuration" }
+    ],
+    "configuration": {
+      "title": "FC Format v5",
+      "properties": {
+        "fc-format.printWidth": {
+          "type": "integer",
+          "default": 120,
+          "minimum": 1,
+          "description": "Target display columns for groups."
+        },
+        "fc-format.indent.style": {
+          "type": "string",
+          "enum": ["space", "tab"],
+          "default": "space",
+          "description": "Indent with spaces or tabs."
+        },
+        "fc-format.indent.size": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "description": "Spaces per indent level when indent.style is space."
+        },
+        "fc-format.indent.continuation": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 4,
+          "description": "Extra indent levels for broken binary-expression tails."
+        },
+        "fc-format.alignment.collections": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align map colons and struct equals signs in broken collections."
+        },
+        "fc-format.endOfLine": {
+          "type": "string",
+          "enum": ["lf", "crlf", "preserve"],
+          "default": "lf",
+          "description": "Line ending for generated layout."
+        },
+        "fc-format.finalNewline": {
+          "type": "boolean",
+          "default": true,
+          "description": "Append a final line ending when missing."
+        },
+        "fc-format.lineBreaks": {
+          "type": "string",
+          "enum": ["canonical", "preserve"],
+          "default": "canonical",
+          "description": "Reflow safe groups or retain existing breaks."
+        },
+        "fc-format.wrap.calls": {
+          "type": "string",
+          "enum": ["auto", "always", "never"],
+          "default": "auto",
+          "description": "Wrapping of call arguments."
+        },
+        "fc-format.wrap.parameters": {
+          "type": "string",
+          "enum": ["preserve", "auto", "always", "never"],
+          "default": "preserve",
+          "description": "Preserve parameter line-break positions or reflow function/event signatures."
+        },
+        "fc-format.wrap.collections": {
+          "type": "string",
+          "enum": ["auto", "always", "never"],
+          "default": "auto",
+          "description": "Wrapping of collection entries."
+        },
+        "fc-format.wrap.conditions": {
+          "type": "string",
+          "enum": ["auto", "always", "never"],
+          "default": "auto",
+          "description": "Wrapping of logical chains in conditions, assignments, returns and group items."
+        },
+        "fc-format.spacing.operators": {
+          "type": "string",
+          "enum": ["spaced", "compact"],
+          "default": "spaced",
+          "description": "Spaces around binary and compound operators."
+        },
+        "fc-format.spacing.assignment": {
+          "type": "string",
+          "enum": ["inherit", "spaced", "compact"],
+          "default": "inherit",
+          "description": "Spaces around = and :=; inherit follows spacing.operators."
+        },
+        "fc-format.spacing.comma": {
+          "type": "string",
+          "enum": ["spaced", "compact"],
+          "default": "spaced",
+          "description": "Space after commas in flat groups."
+        },
+        "fc-format.spacing.brackets": {
+          "type": "string",
+          "enum": ["tight", "spaced"],
+          "default": "tight",
+          "description": "Padding inside flat collections."
+        },
+        "fc-format.imports.sort": {
+          "type": "boolean",
+          "default": false,
+          "description": "Sort complete imports with attached comments into standard, Contracts and project groups."
+        },
+        "fc-format.blankLines.maxConsecutive": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Maximum source blank lines kept between entries."
+        },
+        "fc-format.blankLines.afterImports": {
+          "type": "string",
+          "enum": ["always", "preserve", "never"],
+          "default": "always",
+          "description": "Blank line after the last import."
+        },
+        "fc-format.blankLines.betweenMembers": {
+          "type": "string",
+          "enum": ["preserve", "always", "never"],
+          "default": "preserve",
+          "description": "Blank lines between graph or declaration members."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node ../scripts/build-extension.mjs",
+    "package:vsix": "npx --no-install @vscode/vsce package --no-dependencies",
+    "package:vsix:local": "pwsh -NoProfile -File ../scripts/package-vsix.ps1"
+  }
+}

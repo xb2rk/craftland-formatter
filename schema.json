@@ -1,92 +1,581 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "FC Format v4 Configuration",
-  "description": "Configuration schema for the Free Fire Craftland Code (FC) formatter v4.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FC Formatter v5 project config",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "$schema": {
-      "type": "string",
-      "description": "JSON schema reference for editor autocompletion."
+      "type": "string"
     },
     "printWidth": {
-      "type": "integer",
+      "description": "Target display columns for groups.",
       "default": 120,
-      "minimum": 20,
-      "maximum": 1000,
-      "description": "Target maximum line width in characters for automatic wrapping."
-    },
-    "tabWidth": {
+      "examples": [
+        100
+      ],
       "type": "integer",
-      "default": 2,
-      "minimum": 1,
-      "maximum": 16,
-      "description": "Visual character width of one indentation level."
+      "minimum": 1
     },
-    "useTabs": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether to indent with tab characters instead of spaces."
+    "indent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "description": "Indent with spaces or tabs.",
+          "default": "space",
+          "examples": [
+            "tab"
+          ],
+          "type": "string",
+          "enum": [
+            "space",
+            "tab"
+          ]
+        },
+        "size": {
+          "description": "Spaces per indent level when indent.style is space.",
+          "default": 2,
+          "examples": [
+            4
+          ],
+          "type": "integer",
+          "minimum": 1
+        },
+        "continuation": {
+          "description": "Extra indent levels for broken binary-expression tails.",
+          "default": 1,
+          "examples": [
+            2
+          ],
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        }
+      }
+    },
+    "alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "collections": {
+          "description": "Align map colons and struct equals signs in broken collections.",
+          "default": true,
+          "examples": [
+            false
+          ],
+          "type": "boolean"
+        }
+      }
     },
     "endOfLine": {
+      "description": "Line ending for generated layout.",
+      "default": "lf",
+      "examples": [
+        "crlf"
+      ],
       "type": "string",
-      "enum": ["auto", "lf", "crlf"],
-      "default": "auto",
-      "description": "Line ending convention. 'auto' detects and preserves existing file line endings, 'lf' enforces Unix newlines (\\n), 'crlf' enforces Windows newlines (\\r\\n)."
+      "enum": [
+        "lf",
+        "crlf",
+        "preserve"
+      ]
     },
-    "spaceAroundOperators": {
-      "type": "boolean",
+    "finalNewline": {
+      "description": "Append a final line ending when missing.",
       "default": true,
-      "description": "Whether to insert spaces around binary operators (e.g. `a + b` vs `a+b`)."
+      "examples": [
+        false
+      ],
+      "type": "boolean"
     },
-    "spaceAfterComma": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether to insert a space after commas in argument and collection lists."
-    },
-    "alignCompositeSeparators": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether to column-align colons (`:`) in Map literals and equals signs (`=`) in Struct literals across multiline entries. Set to false for standard Prettier/Google diff-friendly layout."
-    },
-    "bracketSpacing": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether to insert spaces inside single-line composite braces (e.g. `Vector3{ 0, 0, 0 }` vs `Vector3{0, 0, 0}`)."
-    },
-    "wrapCalls": {
+    "lineBreaks": {
+      "description": "Reflow safe groups or retain existing breaks.",
+      "default": "canonical",
+      "examples": [
+        "preserve"
+      ],
       "type": "string",
-      "enum": ["never", "auto", "always"],
-      "default": "auto",
-      "description": "Wrapping strategy for function call arguments and parameter lists."
+      "enum": [
+        "canonical",
+        "preserve"
+      ]
     },
-    "wrapCollections": {
-      "type": "string",
-      "enum": ["never", "auto", "always"],
-      "default": "auto",
-      "description": "Wrapping strategy for composite literals (List, Map, Struct, Tuple)."
+    "wrap": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calls": {
+          "description": "Wrapping of call arguments.",
+          "default": "auto",
+          "examples": [
+            "always"
+          ],
+          "type": "string",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ]
+        },
+        "parameters": {
+          "description": "Preserve parameter line-break positions or reflow function/event and function-type signatures.",
+          "default": "preserve",
+          "examples": [
+            "auto"
+          ],
+          "type": "string",
+          "enum": [
+            "preserve",
+            "auto",
+            "always",
+            "never"
+          ]
+        },
+        "collections": {
+          "description": "Wrapping of collection entries.",
+          "default": "auto",
+          "examples": [
+            "always"
+          ],
+          "type": "string",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ]
+        },
+        "conditions": {
+          "description": "Wrapping of logical chains in conditions, assignments, returns and group items.",
+          "default": "auto",
+          "examples": [
+            "always"
+          ],
+          "type": "string",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ]
+        }
+      }
     },
-    "collapseBlankLines": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether to collapse consecutive empty lines down to a single empty line."
+    "spacing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operators": {
+          "description": "Spaces around binary and compound operators; required lexical separators remain.",
+          "default": "spaced",
+          "examples": [
+            "compact"
+          ],
+          "type": "string",
+          "enum": [
+            "spaced",
+            "compact"
+          ]
+        },
+        "assignment": {
+          "description": "Spaces around = and :=; inherit follows spacing.operators.",
+          "default": "inherit",
+          "examples": [
+            "compact"
+          ],
+          "type": "string",
+          "enum": [
+            "inherit",
+            "spaced",
+            "compact"
+          ]
+        },
+        "comma": {
+          "description": "Space after commas in flat groups.",
+          "default": "spaced",
+          "examples": [
+            "compact"
+          ],
+          "type": "string",
+          "enum": [
+            "spaced",
+            "compact"
+          ]
+        },
+        "brackets": {
+          "description": "Padding inside flat collections.",
+          "default": "tight",
+          "examples": [
+            "spaced"
+          ],
+          "type": "string",
+          "enum": [
+            "tight",
+            "spaced"
+          ]
+        }
+      }
     },
-    "maxBlankLines": {
-      "type": "integer",
-      "default": 1,
-      "minimum": 1,
-      "maximum": 5,
-      "description": "Maximum consecutive blank lines to preserve."
+    "imports": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sort": {
+          "description": "Sort complete imports with attached comments into standard, Contracts and project groups.",
+          "default": false,
+          "examples": [
+            true
+          ],
+          "type": "boolean"
+        }
+      }
     },
-    "insertFinalNewline": {
-      "type": "boolean",
-      "default": true,
-      "description": "Ensure files end with a trailing newline character."
+    "blankLines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxConsecutive": {
+          "description": "Maximum source blank lines kept between entries.",
+          "default": 1,
+          "examples": [
+            0
+          ],
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "afterImports": {
+          "description": "Blank line after the last import.",
+          "default": "always",
+          "examples": [
+            "preserve"
+          ],
+          "type": "string",
+          "enum": [
+            "always",
+            "preserve",
+            "never"
+          ]
+        },
+        "betweenMembers": {
+          "description": "Blank lines between graph or declaration members.",
+          "default": "preserve",
+          "examples": [
+            "always"
+          ],
+          "type": "string",
+          "enum": [
+            "preserve",
+            "always",
+            "never"
+          ]
+        }
+      }
     },
-    "sortImports": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether to automatically sort and group file-header imports (Standard Library, Contracts, Relative)."
+    "ignore": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "overrides": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "files",
+          "options"
+        ],
+        "properties": {
+          "files": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            ]
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "printWidth": {
+                "description": "Target display columns for groups.",
+                "default": 120,
+                "examples": [
+                  100
+                ],
+                "type": "integer",
+                "minimum": 1
+              },
+              "indent": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "style": {
+                    "description": "Indent with spaces or tabs.",
+                    "default": "space",
+                    "examples": [
+                      "tab"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "space",
+                      "tab"
+                    ]
+                  },
+                  "size": {
+                    "description": "Spaces per indent level when indent.style is space.",
+                    "default": 2,
+                    "examples": [
+                      4
+                    ],
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "continuation": {
+                    "description": "Extra indent levels for broken binary-expression tails.",
+                    "default": 1,
+                    "examples": [
+                      2
+                    ],
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  }
+                }
+              },
+              "alignment": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "collections": {
+                    "description": "Align map colons and struct equals signs in broken collections.",
+                    "default": true,
+                    "examples": [
+                      false
+                    ],
+                    "type": "boolean"
+                  }
+                }
+              },
+              "endOfLine": {
+                "description": "Line ending for generated layout.",
+                "default": "lf",
+                "examples": [
+                  "crlf"
+                ],
+                "type": "string",
+                "enum": [
+                  "lf",
+                  "crlf",
+                  "preserve"
+                ]
+              },
+              "finalNewline": {
+                "description": "Append a final line ending when missing.",
+                "default": true,
+                "examples": [
+                  false
+                ],
+                "type": "boolean"
+              },
+              "lineBreaks": {
+                "description": "Reflow safe groups or retain existing breaks.",
+                "default": "canonical",
+                "examples": [
+                  "preserve"
+                ],
+                "type": "string",
+                "enum": [
+                  "canonical",
+                  "preserve"
+                ]
+              },
+              "wrap": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "calls": {
+                    "description": "Wrapping of call arguments.",
+                    "default": "auto",
+                    "examples": [
+                      "always"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "always",
+                      "never"
+                    ]
+                  },
+                  "parameters": {
+                    "description": "Preserve parameter line-break positions or reflow function/event and function-type signatures.",
+                    "default": "preserve",
+                    "examples": [
+                      "auto"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "preserve",
+                      "auto",
+                      "always",
+                      "never"
+                    ]
+                  },
+                  "collections": {
+                    "description": "Wrapping of collection entries.",
+                    "default": "auto",
+                    "examples": [
+                      "always"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "always",
+                      "never"
+                    ]
+                  },
+                  "conditions": {
+                    "description": "Wrapping of logical chains in conditions, assignments, returns and group items.",
+                    "default": "auto",
+                    "examples": [
+                      "always"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "always",
+                      "never"
+                    ]
+                  }
+                }
+              },
+              "spacing": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "operators": {
+                    "description": "Spaces around binary and compound operators; required lexical separators remain.",
+                    "default": "spaced",
+                    "examples": [
+                      "compact"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "spaced",
+                      "compact"
+                    ]
+                  },
+                  "assignment": {
+                    "description": "Spaces around = and :=; inherit follows spacing.operators.",
+                    "default": "inherit",
+                    "examples": [
+                      "compact"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "inherit",
+                      "spaced",
+                      "compact"
+                    ]
+                  },
+                  "comma": {
+                    "description": "Space after commas in flat groups.",
+                    "default": "spaced",
+                    "examples": [
+                      "compact"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "spaced",
+                      "compact"
+                    ]
+                  },
+                  "brackets": {
+                    "description": "Padding inside flat collections.",
+                    "default": "tight",
+                    "examples": [
+                      "spaced"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "tight",
+                      "spaced"
+                    ]
+                  }
+                }
+              },
+              "imports": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "sort": {
+                    "description": "Sort complete imports with attached comments into standard, Contracts and project groups.",
+                    "default": false,
+                    "examples": [
+                      true
+                    ],
+                    "type": "boolean"
+                  }
+                }
+              },
+              "blankLines": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "maxConsecutive": {
+                    "description": "Maximum source blank lines kept between entries.",
+                    "default": 1,
+                    "examples": [
+                      0
+                    ],
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2
+                  },
+                  "afterImports": {
+                    "description": "Blank line after the last import.",
+                    "default": "always",
+                    "examples": [
+                      "preserve"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "always",
+                      "preserve",
+                      "never"
+                    ]
+                  },
+                  "betweenMembers": {
+                    "description": "Blank lines between graph or declaration members.",
+                    "default": "preserve",
+                    "examples": [
+                      "always"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "preserve",
+                      "always",
+                      "never"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
-  },
-  "additionalProperties": false
+  }
 }

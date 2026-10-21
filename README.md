@@ -1,199 +1,205 @@
-# FC Format v4 (`tools/fc-format-v4`)
+# FC Formatter v5
 
-Next-generation, modular, high-performance, and deterministic code formatter and language toolchain for the Free Fire Craftland Code (FC) language.
+FC Formatter v5 formats Craftland `.fcg` and `.fcc` files with a lossless
+syntax tree and document printer. The CLI and VS Code extension share the same
+core, project configuration, diagnostics and output. Current release: **0.9.0**.
 
----
+## Install the VS Code extension
 
-## Highlights
+1. Install `extension/fc-format-v5-vscode-0.9.0.vsix` through
+   **Extensions → ⋯ → Install from VSIX** in VS Code.
+2. Open an FC file and use **Format Document With… → Configure Default
+   Formatter → FC Format v5**. Craftland's language extension provides syntax
+   highlighting and the `ffugclanguage` language ID.
+3. Enable format-on-save after reviewing the style on your files:
 
-- **Grammar Synchronized with VS Code Extension `1.11.0`**: Fully aligned with all 129 lexer tokens and 125 ANTLR rules from `craftlandstudio.ffugclanguage-1.11.0`. Verified by automated grammar provenance suite (`npm run verify:grammar`).
-- **Standard Industry Architecture**: Built following Google TypeScript Style and Prettier principles. Decomposes monolithic structures into clean, single-responsibility modules (< 300 lines each) with top-level imports and strict discriminated unions.
-- **100% Lossless & Idempotent**: Guaranteed zero code distortion across all files. Tested against 164 checked-in `.fcg` and `.fcc` files in the repository.
-- **Single-Pass Import Formatting**: Eliminates the previous double-lex / double-parse bottleneck by sorting and emitting import runs in a single pass.
-- **Pragmas Support**: Includes `// fc-format-ignore` and block comments `/* fc-format-ignore-start */` ... `/* fc-format-ignore-end */` to selectively exclude tricky legacy blocks or custom artistic layouts.
-- **Automatic Upward Config Discovery**: Discovers `.fcformatrc.json`, `.fcformatrc`, or `package.json#fcformat` walking up the directory tree.
-- **Extensible Configuration**: Full JSON Schema (`schema.json`) with IDE auto-completion.
-
----
-
-## Quick Start
-
-### Formatting Files
-
-```bash
-# Format files in place
-fc-format-v4 Assets/Scripts/
-
-# Explicit write flag
-fc-format-v4 -w Assets/Scripts/Main.fcg
-
-# Check if files match canonical formatting without modifying them (CI gate)
-fc-format-v4 --check Assets/Scripts/
-
-# View unified diffs of changes
-fc-format-v4 --diff Assets/Scripts/
-
-# Format code from stdin (ideal for IDE piping / external editors)
-cat file.fcg | fc-format-v4 --stdin-filepath file.fcg
-
-# Use an explicit configuration file
-fc-format-v4 --config path/to/.fcformatrc.json Assets/Scripts/
-```
-
-### Programmatic API
-
-```typescript
-import { formatSource, lex, parseGraphFile, parseHeaderFile } from "fc-format-v4";
-
-const source = `graph Demo { func Run() { var x = 1 + 2 } }`;
-
-// Format source code with custom or default options
-const result = formatSource(source, {
-  fileName: "Demo.fcg",
-  printWidth: 120,
-  tabWidth: 2,
-  useTabs: false,
-});
-
-if (result.code !== undefined) {
-  console.log(result.code);
-} else {
-  console.error("Syntax errors encountered:", result.diagnostics);
+~~~json
+{
+  "[ffugclanguage]": {
+    "editor.defaultFormatter": "fc-format.fc-format-v5-vscode",
+    "editor.formatOnSave": true
+  }
 }
-```
+~~~
 
----
+Requires VS Code 1.96 or later. The VSIX includes its runtime, configuration
+schema and user guides. A separate Node installation is needed for the CLI and
+development commands, not for the installed extension.
 
-## Configuration Reference (`.fcformatrc.json`)
+The Command Palette provides **FC Format v5: Format Document**, **Format Selection**,
+**Preview Formatting** and **Explain Configuration**. Preview shows a diff of the current
+buffer; Explain shows resolved options and their sources. The bundled schema
+provides completion and validation for `.fcfmt.json` without a schema URL.
+See the [installation guide](INSTALL.md) and [extension guide](extension/README.md) for detailed step-by-step installation, EOL behavior, range formatting and migration.
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `$schema` | `string` | `"./schema.json"` | JSON Schema URI for editor auto-completion and validation. |
-| `printWidth` | `number` | `120` | Soft column wrap threshold for calls, conditionals, and composite literals. |
-| `tabWidth` | `number` | `2` | Number of spaces per indentation level. |
-| `useTabs` | `boolean` | `false` | Indent with tabs instead of spaces. |
-| `spaceAroundOperators` | `boolean` | `true` | Ensure spaces around binary and assignment operators (`a + b`, `x = 1`). |
-| `spaceAfterComma` | `boolean` | `true` | Ensure a space after commas in argument, parameter, and item lists. |
-| `wrapCalls` | `"auto" \| "always" \| "never"` | `"auto"` | Line wrapping mode for call expressions and function signatures. |
-| `wrapCollections` | `"auto" \| "always" \| "never"` | `"auto"` | Line wrapping mode for map, struct, and list composite literals. |
-| `collapseBlankLines` | `boolean` | `true` | Collapse runs of consecutive empty lines down to at most 1 blank line. |
-| `insertFinalNewline` | `boolean` | `true` | Ensure formatted files terminate with a single newline character. |
-| `endOfLine` | `"lf" \| "crlf" \| "auto"` | `"lf"` | Newline convention (`lf` for Unix/Git standard, `crlf` for Windows, `auto` preserves source). |
-| `alignCompositeSeparators` | `boolean` | `true` | Vertically align `:` in multi-line maps and `=` in multi-line struct literals. |
-| `bracketSpacing` | `boolean` | `false` | Insert spaces inside `{ }` delimiters for single-line composites. |
-| `sortImports` | `boolean` | `true` | Alphabetically sort and group header import runs at the top of the file. |
+## Use the CLI
 
----
+Requires Node.js 20 or later. The runtime has no npm dependencies, so no
+`npm install` or build is needed for formatting. From `tools/fc-format-v5`, use
+the canonical executable or standard npm scripts:
 
-## Formatting Pragmas
+~~~sh
+npm run format -- "../../Assets/Scripts/Utils/BigNumber.fcg"
+npm run format -- "../../Assets/Scripts"
+npm run format:check -- "../../Assets/Scripts"
+npm run format:diff -- "../../Assets/Scripts"
+~~~
 
-To prevent the formatter from modifying specific lines or blocks of code, use format ignore pragmas:
+`format` writes formatted files. `format:check` checks without writing;
+`format:diff` also prints the proposed diff. Paths are relative to the formatter
+directory; absolute paths work too. Both check commands exit 1 when formatting
+changes are needed, and all three exit 2 on errors.
 
-### Single-line ignore: `// fc-format-ignore`
+You can also invoke the CLI directly using the canonical binary `bin/fcfmt.mjs` or backward-compatible script:
 
-Ignores the statement or expression on the immediately following line:
+~~~sh
+node tools/fc-format-v5/bin/fcfmt.mjs Assets/Scripts/Example.fcg
+node tools/fc-format-v5/bin/fcfmt.mjs --check --cache Assets/Scripts
+node tools/fc-format-v5/bin/fcfmt.mjs --check --diff Assets/Scripts
+node tools/fc-format-v5/bin/fcfmt.mjs --write --cache Assets/Scripts
+node tools/fc-format-v5/bin/fcfmt.mjs --explain-config Assets/Scripts/Example.fcg
+node tools/fc-format-v5/bin/fcfmt.mjs --init
+~~~
 
-```fc
-func Calculate() {
-  // fc-format-ignore
-  var matrix = [1,  0,  0,
-                0,  1,  0,
-                0,  0,  1]
+| Mode / Option | Result |
+| --- | --- |
+| `FILE` | Formatted bytes on stdout |
+| `--stdin-filepath FILE` | Reads stdin and resolves config as if it came from FILE |
+| `--check` | Exit 1 when a file needs formatting |
+| `--diff` | Unified diff on stdout |
+| `--write` | Replaces changed source files after all inputs pass validation |
+| `--cache` | Enables persistent disk caching (`.fcfmtcache`) to skip clean unchanged files |
+| `--cache-location PATH` | Custom location for the cache file (implies `--cache`) |
+| `--cache-strategy STRATEGY` | Cache validation strategy: `metadata` (mtime+size) or `content` (SHA-1) |
+| `--explain-config FILE` | Options, provenance and ignore decision as JSON |
+| `--init` | Creates a small `.fcfmt.json` in the current directory |
+| `--version` | Prints the formatter release version |
+
+Exit codes: **0** success, **1** check differences, **2** usage/config/syntax/I/O
+failure. Failed validation produces no formatted output. A failed multi-file
+preflight writes no file. File replacements are atomic individually; a later
+I/O failure reports any files already written.
+
+## Customize project style
+
+Place `.fcfmt.json` at your project root. A small starting point:
+
+~~~json
+{
+  "printWidth": 120,
+  "indent": { "style": "space", "size": 2, "continuation": 1 },
+  "alignment": { "collections": true },
+  "endOfLine": "lf",
+  "spacing": {
+    "operators": "spaced", "assignment": "inherit",
+    "comma": "spaced", "brackets": "tight"
+  },
+  "imports": { "sort": false },
+  "blankLines": {
+    "maxConsecutive": 1,
+    "afterImports": "always",
+    "betweenMembers": "preserve"
+  },
+  "wrap": {
+    "calls": "auto",
+    "parameters": "preserve",
+    "collections": "auto",
+    "conditions": "auto"
+  }
 }
-```
+~~~
 
-### Block ignore: `/* fc-format-ignore-start */` and `/* fc-format-ignore-end */`
+Resolution order: defaults → `.editorconfig` → nearest `.fcfmt.json` → matching
+file overrides → explicit CLI flags. Discovery stops at the repository boundary.
+Use `ignore` or `.fcfmtignore` for generated files; use `overrides` for different
+styles by file pattern. Unknown options and invalid values are errors.
 
-Ignores an arbitrary range of lines:
+For example, `--spacing-assignment=compact --spacing-comma=compact` prints
+`var values=List<int>{1,2,3}`. Assignment spacing controls `=` and `:=`;
+compound/binary spacing follows `spacing.operators`. Assignment defaults to
+`inherit`, with an explicit `spaced`/`compact` override available. Empty blocks always print
+`{}`. The [config reference](docs/CONFIG_REFERENCE.md) lists every supported
+value, flag, override and ignore rule. The [style guide](docs/STYLE_GUIDE.md)
+shows before/after examples.
 
-```fc
-/* fc-format-ignore-start */
-func MatrixMultiply(
-    a1, a2, a3,
-    b1, b2, b3
-) {
-  // preserved exactly as typed
-}
-/* fc-format-ignore-end */
-```
+Broken maps/structs align `:`/`=` by default; set `alignment.collections: false`
+to disable padding. `wrap.conditions` controls logical chains in conditions and
+value expressions. Broken tails add `indent.continuation` levels, including
+nested parentheses. A fitting chain stays flat in `auto`. Use
+`--align-collections=false --indent-continuation=2` to try a different layout
+without changing the config.
 
----
+`wrap.parameters` defaults to `preserve`: func/event declarations, function
+types and anonymous functions keep their authored parameter break positions.
+Spacing and indentation are normalized. Use `--wrap-parameters=auto` for width
+wrapping, `always` for every parameter on a new line, or `never` for flat lists.
+An explicit older `parameters: "auto"` config still requests automatic wrapping.
 
-## Architectural Decomposition
+Long arithmetic/bitwise chains, including logging concatenations, wrap after
+binary operators with the same continuation indentation. Fitting nested calls
+stay together. Commented collection sections keep their source blank lines up
+to `blankLines.maxConsecutive` (default 1).
 
-```
-tools/fc-format-v4/
-├── schema.json                    # Configuration schema with autocomplete
-├── .fcformatrc.json               # Default repository format configuration
-├── package.json                   # ESM module configuration & scripts
-├── tsconfig.json                  # Strict TypeScript configuration
-├── scripts/
-│   └── gen-token-vocabulary.mjs   # Extension 1.11.0 token generator & provenance validator
-└── src/
-    ├── grammar/                   # Generated & verified lexical tokens (129 tokens)
-    │   ├── token-vocabulary.generated.ts
-    │   ├── lexical.ts
-    │   └── index.ts
-    ├── lex/                       # Lossless trivia & token scanner (< 300 lines/file)
-    │   ├── position.ts            # UTF-16 and 0-based coordinate models
-    │   ├── token.ts               # Token data structure
-    │   ├── trivia.ts              # Whitespace, comments, newlines
-    │   ├── lexer.ts               # Complete lossless lexical scanner
-    │   ├── reconstruct.ts         # Lossless byte-exact source reconstructor
-    │   └── index.ts
-    ├── syntax/                    # Discriminated union AST & type guards
-    │   ├── core.ts                # AST node base types & spans
-    │   ├── types.ts               # Type expression nodes
-    │   ├── expressions.ts         # Expression nodes
-    │   ├── statements.ts          # Statement & block nodes
-    │   ├── declarations.ts        # Function, Graph, Enum, Struct declaration nodes
-    │   ├── guards.ts              # User-defined type guards (zero unsafe casts)
-    │   ├── visitor.ts             # Generic AST walker & reducer
-    │   └── index.ts
-    ├── parser/                    # Modular recursive-descent grammar parsers
-    │   ├── cursor.ts              # Checkpointing token cursor
-    │   ├── diagnostic.ts          # Parser error & warning models
-    │   ├── recovery.ts            # Panic-mode and boundary error recovery
-    │   ├── statement-boundary.ts  # Automatic Semicolon / EOS inference
-    │   ├── type-parser.ts         # Types, generics, function signatures
-    │   ├── composite-parser.ts    # Map, Struct, List, and LocString literals
-    │   ├── expression-parser.ts   # Precedence climbing expression parser
-    │   ├── statement-parser.ts    # Control flow, loops, assignments, variables
-    │   ├── declaration-parser.ts  # Graph, function, and component declarations
-    │   ├── file-parser.ts         # .fcc and .fcg file parsers
-    │   └── index.ts
-    ├── imports/                   # In-place single-pass import sorting
-    │   ├── import-sorter.ts       # Canonical header grouping & alphabetic sorting
-    │   └── index.ts
-    ├── format/                    # Modular syntax-directed formatting engine
-    │   ├── options.ts             # Configuration schema & normalization
-    │   ├── config-loader.ts       # Upward .fcformatrc.json discovery
-    │   ├── pragmas.ts             # // fc-format-ignore range extraction
-    │   ├── token-writer.ts        # Indentation, line-break & column buffer
-    │   ├── ast-context.ts         # AST semantic token classifier
-    │   ├── width-cache.ts         # Bottom-up width precomputations with O(1) jump
-    │   ├── alignment.ts           # Configurable map/struct column alignment
-    │   ├── formatter.ts           # Lossless token-stream layout orchestrator
-    │   └── index.ts
-    └── cli/                       # CLI commands & diagnostics
-        ├── diagnostics.ts         # Coordinate-aware terminal diagnostic formatter
-        └── format.ts              # Command line runner with --check, --write, --config
-```
+Use `--spacing-operators=compact --spacing-brackets=spaced --sort-imports=true`
+to preview the P1 controls. `// fc-format-ignore` preserves the next complete
+entry; `/* fc-format-ignore-start */` and `/* fc-format-ignore-end */` protect
+a region. These comments preserve source bytes after syntax validation.
 
----
+## Operator behavior and safety
 
-## Verification & Testing
+| Input fragment | Default output |
+| --- | --- |
+| `count ++` / `count --` | `count++` / `count--` |
+| `items[0] ++` | `items[0]++` |
+| `count += - value` | `count += -value` |
+| `count +=(value)` | `count += (value)` |
+| `count >=(value)` | `count >= (value)` |
+| `a + +b` / `a - -b` | `a + +b` / `a - -b` |
+| `- -value` / `+ +value` | Keeps distinct unary signs |
+| `a + = b`, `a + +`, `++a` | Parser diagnostic; formatting refused |
 
-```bash
-# Verify grammar synchronization with VS Code Extension 1.11.0
-npm run verify:grammar
+The formatter retains token spellings, comments and literal bytes, reparses its
+output and checks token identity before returning it. Optional import sorting
+moves complete import/comment units first. Only grammar-approved terminal
+commas are normalized. Commented collections reflow with attached comments;
+other commented groups and multiline literals retain protected source layout.
+`printWidth` is a target; an indivisible token can exceed it.
 
-# Run full test suite (70+ unit tests, golden fixtures, hardening, and corpus)
-npm test
+The parser checks imports, decorators, declaration/binding types, signatures,
+constructor-specific collection shapes, file structure, line breaks and
+operator operands. API/type existence and full semantic validation still
+require the FC compiler. Standalone assignment column alignment remains
+outside the API, while range formatting is fully supported in VS Code.
+See [style examples](docs/STYLE_GUIDE.md) for operator spacing, collection
+padding, import sorting and source ignore pragmas.
+See [troubleshooting](docs/TROUBLESHOOTING.md) and
+[testing and verification](docs/TESTING_AND_VERIFICATION.md) for practical limits.
 
-# Run corpus test (formats, reparses, and verifies idempotency on all 164 files)
-npx vitest run tests/format/formatter-corpus.test.ts
+## Build and develop
 
-# Run differential parity test against v3
-npx vitest run tests/format/formatter-differential.test.ts
-```
+From `tools/fc-format-v5`:
+
+~~~sh
+node scripts/test.mjs
+node scripts/gen-config-artifacts.mjs --check
+node scripts/build-extension.mjs
+pwsh -NoProfile -File scripts/package-vsix.ps1
+node scripts/test-extension-host.mjs --vsix
+~~~
+
+The local packager requires PowerShell 7 and refuses to overwrite an existing
+versioned VSIX. With `@vscode/vsce` available, the extension directory also offers
+`npm run package:vsix` after building. Both include the curated runtime and user
+docs from `extension/dist`.
+
+`npm test` invokes the same portable launcher. It discovers only
+`tests/*.test.mjs`, including on Windows. The pinned Craftland syntax bundle is
+needed for development oracle tests; the configured FC compiler is needed for
+`node scripts/probe-compiler.mjs --formatted`. Neither is bundled in the product.
+See [architecture](docs/ARCHITECTURE.md) for module ownership and
+[grammar and syntax](docs/GRAMMAR_AND_SYNTAX.md) for formal grammar rules.
+
+Before a project-wide write, inspect `node scripts/audit-rollout.mjs`, review
+representative diffs and compile formatted source. Historical rollout audits
+are archived in [docs/history/PHASE6_ROLLOUT.md](docs/history/PHASE6_ROLLOUT.md).
+Changes are listed in [CHANGELOG.md](CHANGELOG.md).

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "function pointer type declaration",
+    "kind": "fcc",
+    "source": "define Callback : func(value int) bool\n",
+    "expectedRuleIndices": [5]
+  },
+  {
+    "name": "bridging component decorator",
+    "kind": "fcc",
+    "source": "[bridging]\ncomponent Bridge {}\n",
+    "expectedRuleIndices": [24]
+  },
+  {
+    "name": "declared graph function",
+    "kind": "fcc",
+    "source": "declare graph Api {\n  func Run()\n}\n",
+    "expectedRuleIndices": [43]
+  },
+  {
+    "name": "anonymous function assignment",
+    "kind": "fcg",
+    "source": "import \"StdLibrary.fcc\" as StdLibrary\ngraph Demo {\n  func Run() {\n    callback = func() {}\n  }\n}\n",
+    "expectedRuleIndices": [56, 87]
+  }
+]
