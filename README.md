@@ -40,7 +40,7 @@ Add to your VS Code `settings.json`:
 ## Feature Showcase
 
 ### 1. Organize & Sort Imports (`Shift+Alt+O`)
-Groups and sorts imports in canonical hierarchy: `StdLibrary` &rarr; `Contracts/` &rarr; Project relative scripts.
+Automatically classifies and sorts imports into canonical layers: Standard Libraries &rarr; Parent Modules (`../`) &rarr; Local Submodules (`./`).
 
 <table>
 <tr><th>Before</th><th>After</th></tr>
@@ -48,10 +48,12 @@ Groups and sorts imports in canonical hierarchy: `StdLibrary` &rarr; `Contracts/
 <td>
 
 ```fcg
-import "GameLogic.fcg" as GameLogic
+import "./UI/HUDController.fcg" as HUDController
+import "../Data/ItemCatalog.fcg" as ItemCatalog
 import "StdLibrary.fcc" as StdLibrary
-import "Contracts/Item.fcc" as Item
-import "Contracts/Skill.fcc" as Skill
+import "EditorGenLib.fcc" as EditorGenLib
+import "./Core/Combat.fcg" as Combat
+import "../Systems/Inventory.fcg" as Inventory
 ```
 
 </td>
@@ -59,11 +61,12 @@ import "Contracts/Skill.fcc" as Skill
 
 ```fcg
 import "StdLibrary.fcc" as StdLibrary
+import "EditorGenLib.fcc" as EditorGenLib
 
-import "Contracts/Item.fcc" as Item
-import "Contracts/Skill.fcc" as Skill
-
-import "GameLogic.fcg" as GameLogic
+import "../Data/ItemCatalog.fcg" as ItemCatalog
+import "../Systems/Inventory.fcg" as Inventory
+import "./Core/Combat.fcg" as Combat
+import "./UI/HUDController.fcg" as HUDController
 ```
 
 </td>
@@ -114,7 +117,7 @@ tuple PlantEntry {
 </table>
 
 ### 3. Smart Collections & Map Colon Alignment
-Aligns `:` into neat table-like columns. Respects manual line breaks: multiline collections never collapse into a single line.
+Aligns `:` into neat table-like vertical columns. Respects manual line breaks: multiline collections never collapse into a single line.
 
 <table>
 <tr><th>Before</th><th>After</th></tr>
@@ -122,11 +125,11 @@ Aligns `:` into neat table-like columns. Respects manual line breaks: multiline 
 <td>
 
 ```fcg
-STATECHAT Map<int, string> ={
-    1 : "default",
-    2 : "intro",
-    3 : "tip",
-    4 : "wishSuccess",
+ItemPrices Map<string, int> = {
+  "wood": 10,
+  "iron_ingot": 75,
+  "golden_coin": 500,
+  "diamond_gem": 2500,
 }
 ```
 
@@ -134,11 +137,11 @@ STATECHAT Map<int, string> ={
 <td>
 
 ```fcg
-STATECHAT Map<int, string> = {
-  1: "default",
-  2: "intro",
-  3: "tip",
-  4: "wishSuccess",
+ItemPrices Map<string, int> = {
+  "wood"       : 10,
+  "iron_ingot" : 75,
+  "golden_coin": 500,
+  "diamond_gem": 2500,
 }
 ```
 
@@ -146,8 +149,8 @@ STATECHAT Map<int, string> = {
 </tr>
 </table>
 
-### 4. Intentional Line Preservation (Calls & Parameters)
-Single-line method calls and expressions stay intact instead of awkwardly wrapping. Multiline calls retain clean indentation and commas.
+### 4. Multiline Calls & Argument Formatting
+Transforms messy, irregular multiline arguments and operators into clean, consistently indented parameters with grammar-safe delimiters.
 
 <table>
 <tr><th>Before</th><th>After</th></tr>
@@ -155,14 +158,20 @@ Single-line method calls and expressions stay intact instead of awkwardly wrappi
 <td>
 
 ```fcg
-_EventContent = UIUtils.GetHUDWidget(thisEntity<Player>, _ActivitiesHUD, Res.Activities[EResKeyActivities.Event]) as entity<UIWidget>
+var damage = CombatSystem.CalculateDamage(attacker,target,
+    baseDamage+bonusDamage,  critRate * 2, true )
 ```
 
 </td>
 <td>
 
 ```fcg
-_EventContent = UIUtils.GetHUDWidget(thisEntity<Player>, _ActivitiesHUD, Res.Activities[EResKeyActivities.Event]) as entity<UIWidget>
+var damage = CombatSystem.CalculateDamage(
+  attacker,
+  target,
+  baseDamage + bonusDamage,
+  critRate * 2,
+  true)
 ```
 
 </td>
@@ -243,7 +252,7 @@ npm test
 npm run build:extension
 
 # Package VSIX
-pwsh -NoProfile -File scripts/package-vsix.ps1
+pwsh -NoProfile -File scripts/package-vsix.ps1 -Force
 ```
 
 ---
