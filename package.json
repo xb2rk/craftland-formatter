@@ -1,24 +1,47 @@
 {
-  "name": "fc-format",
+  "name": "fc-format-v2",
   "version": "0.1.0",
-  "description": "Formatter and linter for Free Fire Craftland Code (.fcg / .fcc)",
+  "private": true,
   "type": "module",
-  "files": [
-    "dist"
-  ],
-  "main": "dist/index.js",
+  "description": "Deterministic formatter and structural linter for Craftland Studio .fcg/.fcc, written from scratch against the compiled ANTLR grammar.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/cli.d.ts",
+      "import": "./dist/cli/cli.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
   "bin": {
-    "fc-format": "dist/cli.js"
+    "fc-format-v2": "dist/cli/cli.js"
+  },
+  "engines": {
+    "node": "^20.0.0 || ^22.0.0 || >=24.0.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "parse": "node dist/cli.js parse",
-    "fmt": "node dist/cli.js format",
-    "lint": "node dist/cli.js lint"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx src/cli/cli.ts",
+    "fmt": "tsx src/cli/cli.ts fmt",
+    "check": "tsx src/cli/cli.ts check",
+    "lint": "tsx src/cli/cli.ts lint",
+    "oracle": "tsx src/cli/oracle.ts",
+    "grammar:gen": "node scripts/gen-grammar.mjs",
+    "grammar:check": "node scripts/gen-grammar.mjs --check"
   },
+  "dependencies": {},
   "devDependencies": {
-    "typescript": "^5.5.0",
-    "@types/node": "^20.11.0"
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
   }
 }

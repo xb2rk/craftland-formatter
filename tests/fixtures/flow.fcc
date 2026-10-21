@@ -1,0 +1,20 @@
+/**
+ * Golden: control flow - for range/index, if, wait/start.
+ */
+func Update(dt float) {
+  for _, model in _MODEL_ENTITY_LIST {
+    Call(model)
+  }
+
+  for step = 0, steps, 1 {
+    if step == 5 {
+      continue
+    }
+    if LongCall(first, second, third) {
+      return
+    }
+  }
+
+  wait 0.5
+  start Foo()
+}

@@ -1,0 +1,23 @@
+/**
+ * Golden: comments + blank lines - JSDoc, line/block, blank collapse (max 1).
+ * Blank line between comments must survive as one empty line (trivia.ts).
+ */
+
+/** Player helpers - block doc on its own line. */
+func Helper(x int) int {
+  // step 1: compute
+  var y = x + 1
+
+  // step 2 - single blank above is canonical (>=2 collapsed to 1)
+  return y
+}
+
+// Separator comment block
+// ==========
+
+/** Second group - blank above is semantic. */
+func Other() int {
+  /* inline block */
+  var a int = 1
+  return a
+}
