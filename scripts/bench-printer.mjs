@@ -9,10 +9,12 @@
 import { readFileSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
+import { fileURLToPath } from "node:url";
 
 import { formatSource } from "../src/printer.mjs";
 
-const input = process.argv[2];
+const defaultFixture = fileURLToPath(new URL("../tests/fixtures/big_math.fcg", import.meta.url));
+const input = process.argv[2] ?? defaultFixture;
 const repetitions = Number(process.argv[3] ?? 5);
 
 if (!input || !Number.isInteger(repetitions) || repetitions < 1) {

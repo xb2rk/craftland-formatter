@@ -2,11 +2,11 @@
 
 FC Formatter v5 formats Craftland `.fcg` and `.fcc` files with a lossless
 syntax tree and document printer. The CLI and VS Code extension share the same
-core, project configuration, diagnostics and output. Current release: **0.9.0**.
+core, project configuration, diagnostics and output. Current release: **1.0.1**.
 
 ## Install the VS Code extension
 
-1. Install `extension/fc-format-v5-vscode-0.9.0.vsix` through
+1. Install `extension/fc-format-v5-vscode-1.0.1.vsix` through
    **Extensions → ⋯ → Install from VSIX** in VS Code.
 2. Open an FC file and use **Format Document With… → Configure Default
    Formatter → FC Format v5**. Craftland's language extension provides syntax
@@ -35,14 +35,13 @@ See the [installation guide](INSTALL.md) and [extension guide](extension/README.
 ## Use the CLI
 
 Requires Node.js 20 or later. The runtime has no npm dependencies, so no
-`npm install` or build is needed for formatting. From `tools/fc-format-v5`, use
-the canonical executable or standard npm scripts:
+`npm install` or build is needed for formatting. Standard npm scripts:
 
 ~~~sh
-npm run format -- "../../Assets/Scripts/Utils/BigNumber.fcg"
-npm run format -- "../../Assets/Scripts"
-npm run format:check -- "../../Assets/Scripts"
-npm run format:diff -- "../../Assets/Scripts"
+npm run format -- "path/to/script.fcg"
+npm run format -- "path/to/scripts"
+npm run format:check -- "path/to/scripts"
+npm run format:diff -- "path/to/scripts"
 ~~~
 
 `format` writes formatted files. `format:check` checks without writing;
@@ -53,12 +52,12 @@ changes are needed, and all three exit 2 on errors.
 You can also invoke the CLI directly using the canonical binary `bin/fcfmt.mjs` or backward-compatible script:
 
 ~~~sh
-node tools/fc-format-v5/bin/fcfmt.mjs Assets/Scripts/Example.fcg
-node tools/fc-format-v5/bin/fcfmt.mjs --check --cache Assets/Scripts
-node tools/fc-format-v5/bin/fcfmt.mjs --check --diff Assets/Scripts
-node tools/fc-format-v5/bin/fcfmt.mjs --write --cache Assets/Scripts
-node tools/fc-format-v5/bin/fcfmt.mjs --explain-config Assets/Scripts/Example.fcg
-node tools/fc-format-v5/bin/fcfmt.mjs --init
+node bin/fcfmt.mjs path/to/script.fcg
+node bin/fcfmt.mjs --check --cache path/to/scripts
+node bin/fcfmt.mjs --check --diff path/to/scripts
+node bin/fcfmt.mjs --write --cache path/to/scripts
+node bin/fcfmt.mjs --explain-config path/to/script.fcg
+node bin/fcfmt.mjs --init
 ~~~
 
 | Mode / Option | Result |
@@ -177,7 +176,7 @@ See [troubleshooting](docs/TROUBLESHOOTING.md) and
 
 ## Build and develop
 
-From `tools/fc-format-v5`:
+From the repository root:
 
 ~~~sh
 node scripts/test.mjs

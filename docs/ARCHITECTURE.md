@@ -40,22 +40,22 @@ flowchart TD
 
 | Subsystem | Module | Responsibility & Key Implementation |
 |---|---|---|
-| **Syntax & Lexical** | [`src/syntax/lexer.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/syntax/lexer.mjs) | Lossless lexical tokenization, trivia tracking, comment categorization, protected byte spans. Optimized with sticky regex (`NUMBER_STICKY = /.../y`) and `PUNCTUATION_BY_FIRST` map. |
-| | [`src/syntax/parser.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/syntax/parser.mjs) | Concrete Syntax Tree (CST) parser with role tagging, declaration headers, statement boundaries, virtual EOS (`NLSEMI`) handling, and syntax diagnostics. |
-| | [`src/syntax/types.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/syntax/types.mjs) | Type reader for generics (`List<T>`, `Map<K, V>`), component types, function pointers, and parameter declarations. |
-| | [`src/syntax/operators.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/syntax/operators.mjs) | Canonical tables of assignment, binary, prefix, shift, and postfix operators. |
-| **Layout & Formatting** | [`src/printer.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/printer.mjs) | Traverses CST nodes and converts them into Wadler-Leijen `Doc` trees. Drives comment attachment, line break policies, and safety validation. |
-| | [`src/layout/logical-chain.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/layout/logical-chain.mjs) | Isolated logic for operator precedence levels (`ARITHMETIC_PRECEDENCE`), condition group wrapping, and logical expression breaks (`&&`, `||`). |
-| | [`src/layout/collection-alignment.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/layout/collection-alignment.mjs) | Column alignment algorithm for Map colons (`:`) and Struct assignments (`=`) using actual display columns (`columns()`) and conditional `ifBreak` padding. |
-| **Document IR & Engine** | [`src/document.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/document.mjs) | Immutable Wadler-Leijen doc nodes: `text`, `line`, `softline`, `hardline`, `concat`, `group`, `indent`, `ifBreak`, `verbatim`. |
-| | [`src/render.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/render.mjs) | Column fitting renderer. Measures string visual width with ASCII fast-path and Unicode character column width calculation. |
-| **Performance & Diff** | [`src/cache.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/cache.mjs) | Persistent disk cache (`.fcfmtcache`) using atomic write. Combines SHA-1 content hash, file size, `mtimeMs`, version, and configuration leaves hash. |
-| | [`src/diff.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/diff.mjs) | Zero-dependency Myers line-level diffing algorithm with common prefix/suffix optimization (`computeLineHunks`) and unified diff generator. |
-| **Services & Tooling** | [`src/service.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/service.mjs) | Headless formatting service shared between CLI and editor adapters. Resolves effective configuration and manages ignore status. |
-| | [`src/config.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/config.mjs) | Discovery of `.fcfmt.json`, `.editorconfig`, and `.fcfmtignore`. Implements cascading precedence, glob pattern overrides, and provenance tracking. |
-| | [`src/config-registry.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/config-registry.mjs) | Single source of truth for all formatting options, defaults, validators, and CLI mappings. Powers automated schema generation. |
-| | [`bin/fcfmt.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/bin/fcfmt.mjs) / [`src/cli.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/cli.mjs) | Command-line interface with atomic batch preflight verification, sibling temporary file commit, and `--cache` integration. |
-| | [`extension/src/extension.cjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/extension/src/extension.cjs) | VS Code extension adapter providing Document Formatting (`Shift+Alt+F`), Range Formatting (`Ctrl+K, Ctrl+F`), in-memory config caching, and file watchers. |
+| **Syntax & Lexical** | [`src/syntax/lexer.mjs`](../src/syntax/lexer.mjs) | Lossless lexical tokenization, trivia tracking, comment categorization, protected byte spans. Optimized with sticky regex (`NUMBER_STICKY = /.../y`) and `PUNCTUATION_BY_FIRST` map. |
+| | [`src/syntax/parser.mjs`](../src/syntax/parser.mjs) | Concrete Syntax Tree (CST) parser with role tagging, declaration headers, statement boundaries, virtual EOS (`NLSEMI`) handling, and syntax diagnostics. |
+| | [`src/syntax/types.mjs`](../src/syntax/types.mjs) | Type reader for generics (`List<T>`, `Map<K, V>`), component types, function pointers, and parameter declarations. |
+| | [`src/syntax/operators.mjs`](../src/syntax/operators.mjs) | Canonical tables of assignment, binary, prefix, shift, and postfix operators. |
+| **Layout & Formatting** | [`src/printer.mjs`](../src/printer.mjs) | Traverses CST nodes and converts them into Wadler-Leijen `Doc` trees. Drives comment attachment, line break policies, and safety validation. |
+| | [`src/layout/logical-chain.mjs`](../src/layout/logical-chain.mjs) | Isolated logic for operator precedence levels (`ARITHMETIC_PRECEDENCE`), condition group wrapping, and logical expression breaks (`&&`, `||`). |
+| | [`src/layout/collection-alignment.mjs`](../src/layout/collection-alignment.mjs) | Column alignment algorithm for Map colons (`:`) and Struct assignments (`=`) using actual display columns (`columns()`) and conditional `ifBreak` padding. |
+| **Document IR & Engine** | [`src/document.mjs`](../src/document.mjs) | Immutable Wadler-Leijen doc nodes: `text`, `line`, `softline`, `hardline`, `concat`, `group`, `indent`, `ifBreak`, `verbatim`. |
+| | [`src/render.mjs`](../src/render.mjs) | Column fitting renderer. Measures string visual width with ASCII fast-path and Unicode character column width calculation. |
+| **Performance & Diff** | [`src/cache.mjs`](../src/cache.mjs) | Persistent disk cache (`.fcfmtcache`) using atomic write. Combines SHA-1 content hash, file size, `mtimeMs`, version, and configuration leaves hash. |
+| | [`src/diff.mjs`](../src/diff.mjs) | Zero-dependency Myers line-level diffing algorithm with common prefix/suffix optimization (`computeLineHunks`) and unified diff generator. |
+| **Services & Tooling** | [`src/service.mjs`](../src/service.mjs) | Headless formatting service shared between CLI and editor adapters. Resolves effective configuration and manages ignore status. |
+| | [`src/config.mjs`](../src/config.mjs) | Discovery of `.fcfmt.json`, `.editorconfig`, and `.fcfmtignore`. Implements cascading precedence, glob pattern overrides, and provenance tracking. |
+| | [`src/config-registry.mjs`](../src/config-registry.mjs) | Single source of truth for all formatting options, defaults, validators, and CLI mappings. Powers automated schema generation. |
+| | [`bin/fcfmt.mjs`](../bin/fcfmt.mjs) / [`src/cli.mjs`](../src/cli.mjs) | Command-line interface with atomic batch preflight verification, sibling temporary file commit, and `--cache` integration. |
+| | [`extension/src/extension.cjs`](../extension/src/extension.cjs) | VS Code extension adapter providing Document Formatting (`Shift+Alt+F`), Range Formatting (`Ctrl+K, Ctrl+F`), in-memory config caching, and file watchers. |
 
 ---
 
@@ -114,6 +114,6 @@ Unlike traditional formatters that use imperative token writers with mutating co
 When a developer formats a selection (`Ctrl+K, Ctrl+F`), `fc-format-v5` uses **Full-Context Line-Bound Slicing**:
 
 1. The entire document is formatted in memory in full context (`< 3ms`). This guarantees that all scope levels, parent indentations, and block braces are 100% syntactically correct.
-2. The Myers diff algorithm in [`src/diff.mjs`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/tools/fc-format-v5/src/diff.mjs) compares the original lines against the formatted lines to compute isolated `LineHunk` blocks.
+2. The Myers diff algorithm in [`src/diff.mjs`](../src/diff.mjs) compares the original lines against the formatted lines to compute isolated `LineHunk` blocks.
 3. The extension expands the user's selected range to full line bounds and filters only the hunks that intersect with the selection.
 4. Only the intersecting hunks are converted into `vscode.TextEdit` replacements. Lines outside the selection remain completely untouched.

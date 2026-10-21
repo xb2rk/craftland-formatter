@@ -1,0 +1,62 @@
+import "StdLibrary.fcc" as StdLibrary
+import "List.fcc" as List
+import "Map.fcc" as Map
+
+[platform_server]
+graph InventorySystem {
+  _MAX_SLOTS int = 24
+
+  _ItemDatabase Map<string, int> = Map<string, int>{
+    "PotionSmall" : 50,
+    "PotionLarge" : 120,
+    "ElixirMana"  : 200,
+    "ReviveScroll": 500,
+  }
+
+  _PlayerSlots List<string> = List<string>{
+    "PotionSmall",
+    "PotionSmall",
+    "ElixirMana",
+  }
+
+  func HasItem(itemId string) bool {
+    for _, item in _PlayerSlots {
+      if item == itemId {
+        return true
+      }
+    }
+    return false
+  }
+
+  func GetPrice(itemId string) int {
+    if Map.ContainKey(_ItemDatabase, itemId) {
+      return _ItemDatabase[itemId]
+    }
+    return 0
+  }
+
+  func AddItem(itemId string) bool {
+    if List.Length(_PlayerSlots) >= _MAX_SLOTS {
+      return false
+    }
+
+    if !Map.ContainKey(_ItemDatabase, itemId) {
+      return false
+    }
+
+    List.Append(_PlayerSlots, itemId)
+    return true
+  }
+
+  func RemoveFirst(itemId string) bool {
+    var index int = 0
+    while index < List.Length(_PlayerSlots) {
+      if _PlayerSlots[index] == itemId {
+        List.RemoveAt(_PlayerSlots, index)
+        return true
+      }
+      index++
+    }
+    return false
+  }
+}

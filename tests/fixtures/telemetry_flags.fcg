@@ -1,0 +1,31 @@
+import "StdLibrary.fcc" as StdLibrary
+import "Map.fcc" as Map
+
+[platform_server]
+graph TelemetryFlags {
+  _Config Map<string, bool> = Map<string, bool>{
+    // Core engine systems
+    DiagnosticsEnabled: true,
+    CombatLogging     : false,
+
+    // Feature gates and kill switches
+    KillSwitchChestSystem: true,
+
+    // The existing KillSwitch is maintained for rollback safety
+    KillSwitchLegacyReward: false,
+    EnableDynamicLoot     : true,
+  }
+
+  func IsFeatureEnabled(featureKey string) bool {
+    if !Map.ContainKey(_Config, featureKey) {
+      return false
+    }
+    return _Config[featureKey]
+  }
+
+  func SetFeatureOverride(featureKey string, enabled bool) {
+    if Map.ContainKey(_Config, featureKey) {
+      _Config[featureKey] = enabled
+    }
+  }
+}

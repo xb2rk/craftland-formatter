@@ -1,0 +1,90 @@
+// Core Game Contract Definitions
+import "StdLibrary.fcc" as StdLibrary
+
+/**
+  Core contract definitions for gameplay and entity systems.
+  */
+
+// ==========================
+// Enums
+// ==========================
+
+enum ItemRarity {
+  Common = 0
+  Uncommon = 1
+  Rare = 2
+  Epic = 3
+  Legendary = 4
+}
+
+enum ResultCode {
+  SUCCESS = 0
+  UnknownError = -1
+  EntityNotFound = 101
+  InventoryFull = 201
+  CooldownActive = 301
+  InsufficientBalance = 401
+}
+
+enum EntityState {
+  Idle = 0
+  Moving = 1
+  Attacking = 2
+  Dead = 3
+}
+
+// ==========================
+// Tuples
+// ==========================
+
+tuple Vector3Data {
+  X float = 0.0
+  Y float = 0.0
+  Z float = 0.0
+}
+
+tuple CharacterStats {
+  MaxHealth float = 100.0
+  CurrentHealth float = 100.0
+  AttackPower float = 15.0
+  DefensePower float = 5.0
+  MoveSpeed float = 4.5
+}
+
+tuple InventorySlot {
+  SlotIndex int = 0
+  ItemId string = ""
+  Quantity int = 0
+  Rarity int = 0
+}
+
+// ==========================
+// Types & Definitions
+// ==========================
+
+define StateCallback: func(player entity<Player>, state int) bool
+define DamageFilter: func(damage float, isCrit bool) float
+
+alias EntityTarget = entity<Player> & Transform
+
+// ==========================
+// Events
+// ==========================
+
+[platform_client]
+[platform_server]
+event Notify_EntityDamaged(target entity<Player>, damage float, isCritical bool)
+
+[platform_client]
+[platform_server]
+event Notify_InventoryUpdated(player entity<Player>, slotIndex int, itemId string, quantity int)
+
+[platform_server]
+event Fact_EntityDefeated(victim entity<Player>, killer entity<Player>, bountyScore int)
+
+// ==========================
+// Signatures
+// ==========================
+
+func CalculateMitigatedDamage(rawDamage float, defense float) float
+func IsValidTarget(source entity<Player>, target entity<Player>) bool

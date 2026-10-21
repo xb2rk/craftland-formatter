@@ -8,8 +8,8 @@ This guide explains how to install, configure, verify, rebuild, and use the **FC
 
 The extension is already compiled and packaged as a standalone VSIX file:
 
-- **VSIX Path**: [`extension/fc-format-v5-vscode-0.9.0.vsix`](extension/fc-format-v5-vscode-0.9.0.vsix)
-- **Version**: `0.9.0`
+- **VSIX Path**: [`extension/fc-format-v5-vscode-1.0.1.vsix`](extension/fc-format-v5-vscode-1.0.1.vsix)
+- **Version**: `1.0.1`
 - **Dependencies**: None. The VSIX includes its complete JavaScript runtime (`extension/dist/`) and needs no external `node_modules` or global Node.js installation in the editor.
 
 ### Method A: Install via VS Code GUI
@@ -17,14 +17,14 @@ The extension is already compiled and packaged as a standalone VSIX file:
 2. Open the **Extensions view** (`Ctrl+Shift+X` on Windows/Linux, `Cmd+Shift+X` on macOS).
 3. Click the three dots menu (**⋯**) at the top right of the Extensions pane.
 4. Select **Install from VSIX…**.
-5. Browse to `tools/fc-format-v5/extension/fc-format-v5-vscode-0.9.0.vsix` and click **Install**.
+5. Browse to `extension/fc-format-v5-vscode-1.0.1.vsix` and click **Install**.
 6. When prompted, reload or restart the editor.
 
 ### Method B: Install via Terminal / CLI
 Run the standard VS Code command line installer:
 
 ~~~sh
-code --install-extension tools/fc-format-v5/extension/fc-format-v5-vscode-0.9.0.vsix
+code --install-extension extension/fc-format-v5-vscode-1.0.1.vsix
 ~~~
 
 *(For Cursor, use `cursor --install-extension ...`; for VS Code Insiders, use `code-insiders --install-extension ...`)*.
@@ -133,7 +133,7 @@ If you modify the formatter core or extension source, follow these steps to rebu
 - PowerShell 7 (`pwsh`) for zero-dependency packaging, or `@vscode/vsce` if using npm packaging.
 
 ### Step 1: Build the Extension Runtime Distribution
-From `tools/fc-format-v5`:
+From the repository root:
 
 ~~~sh
 node scripts/build-extension.mjs
@@ -174,11 +174,11 @@ A `.vsix` file is an Open Packaging Convention (OPC) zip archive. You can inspec
 
 ~~~powershell
 # View archive contents without extracting
-pwsh -Command "[System.IO.Compression.ZipFile]::OpenRead('extension/fc-format-v5-vscode-0.9.0.vsix').Entries | Select-Object FullName, Length"
+pwsh -Command "[System.IO.Compression.ZipFile]::OpenRead('extension/fc-format-v5-vscode-1.0.1.vsix').Entries | Select-Object FullName, Length"
 ~~~
 
 Or extract it manually:
-1. Rename `fc-format-v5-vscode-0.9.0.vsix` to `fc-format-v5-vscode-0.9.0.zip`.
+1. Rename `fc-format-v5-vscode-1.0.1.vsix` to `fc-format-v5-vscode-1.0.1.zip`.
 2. Extract the zip archive. Inside the `extension/` folder you will find:
    - `package.json`: Extension manifest and configuration definitions.
    - `dist/extension.cjs`: VS Code extension entry point.

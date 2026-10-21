@@ -1,0 +1,25 @@
+import "StdLibrary.fcc" as StdLibrary
+import "Convert.fcc" as Convert
+import "Map.fcc" as Map
+
+[platform_client]
+graph ClientEntityManager {
+  _ActivePool Map<string, int> = Map<string, int>{}
+
+  func ToString(count int) string {
+    return Convert.ToString(count)
+  }
+
+  func GetActiveCount(key string) int {
+    if Map.ContainKey(_ActivePool, key) {
+      return _ActivePool[key]
+    }
+    return 0
+  }
+
+  func ReportMetrics(reportKey string) string {
+    var prefix string = "ClientPool: "
+    var summary string = prefix + ToString(GetActiveCount(reportKey)) + " entities active"
+    return summary
+  }
+}

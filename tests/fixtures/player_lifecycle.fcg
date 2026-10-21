@@ -1,0 +1,68 @@
+import "StdLibrary.fcc" as StdLibrary
+import "List.fcc" as List
+import "Map.fcc" as Map
+import "Convert.fcc" as Convert
+
+/**
+  Server player lifecycle controller managing join queue and session states.
+  */
+
+[platform_server]
+static graph PlayerLifecycle {
+  _WARMUP_TICKS int = 90
+  _MAX_CONCURRENT_JOINS int = 1
+
+  _JoinQueue List<entity<Player>> = List<entity<Player>>{}
+  _ActiveRoster Map<string, entity<Player>> = Map<string, entity<Player>>{}
+  _JoinInProgress bool = false
+  _LastJoinTick int = 0
+
+  func QueueJoin(player entity<Player>, playerUid string) {
+    if player == nil {
+      return
+    }
+
+    if Map.ContainKey(_ActiveRoster, playerUid) {
+      return
+    }
+
+    List.Append(_JoinQueue, player)
+  }
+
+  func HasActiveSession(playerUid string) bool {
+    return Map.ContainKey(_ActiveRoster, playerUid)
+  }
+
+  func RemoveQueued(target entity<Player>) {
+    var index int = 0
+    while index < List.Length(_JoinQueue) {
+      if _JoinQueue[index] == target {
+        List.RemoveAt(_JoinQueue, index)
+        return
+      }
+      index++
+    }
+  }
+
+  func TickJoinPump(nowTick int) {
+    if _JoinInProgress || List.Length(_JoinQueue) == 0 {
+      return
+    }
+
+    if nowTick < _LastJoinTick + _WARMUP_TICKS {
+      return
+    }
+
+    var nextPlayer entity<Player> = _JoinQueue[0]
+    List.RemoveAt(_JoinQueue, 0)
+    _JoinInProgress = true
+    _LastJoinTick = nowTick
+
+    StartJoinSequence(nextPlayer)
+  }
+
+  func StartJoinSequence(player entity<Player>) {
+    // Initial teleport and state assignment
+    _JoinInProgress = false
+  }
+}

@@ -1,0 +1,1925 @@
+// Synthetic Large Math Utility Benchmark Fixture
+import "StdLibrary.fcc" as StdLibrary
+
+graph BigMathEngine {
+  // Math Routine 1: Iterative polynomial calculation
+  func CalculatePolynomial1(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 1.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector1(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 2: Iterative polynomial calculation
+  func CalculatePolynomial2(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 2.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector2(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 3: Iterative polynomial calculation
+  func CalculatePolynomial3(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 3.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector3(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 4: Iterative polynomial calculation
+  func CalculatePolynomial4(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 4.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector4(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 5: Iterative polynomial calculation
+  func CalculatePolynomial5(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 5.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector5(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 6: Iterative polynomial calculation
+  func CalculatePolynomial6(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 6.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector6(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 7: Iterative polynomial calculation
+  func CalculatePolynomial7(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 7.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector7(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 8: Iterative polynomial calculation
+  func CalculatePolynomial8(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 8.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector8(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 9: Iterative polynomial calculation
+  func CalculatePolynomial9(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 9.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector9(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 10: Iterative polynomial calculation
+  func CalculatePolynomial10(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 10.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector10(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 11: Iterative polynomial calculation
+  func CalculatePolynomial11(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 11.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector11(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 12: Iterative polynomial calculation
+  func CalculatePolynomial12(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 12.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector12(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 13: Iterative polynomial calculation
+  func CalculatePolynomial13(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 13.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector13(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 14: Iterative polynomial calculation
+  func CalculatePolynomial14(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 14.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector14(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 15: Iterative polynomial calculation
+  func CalculatePolynomial15(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 15.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector15(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 16: Iterative polynomial calculation
+  func CalculatePolynomial16(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 16.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector16(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 17: Iterative polynomial calculation
+  func CalculatePolynomial17(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 17.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector17(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 18: Iterative polynomial calculation
+  func CalculatePolynomial18(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 18.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector18(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 19: Iterative polynomial calculation
+  func CalculatePolynomial19(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 19.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector19(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 20: Iterative polynomial calculation
+  func CalculatePolynomial20(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 20.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector20(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 21: Iterative polynomial calculation
+  func CalculatePolynomial21(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 21.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector21(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 22: Iterative polynomial calculation
+  func CalculatePolynomial22(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 22.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector22(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 23: Iterative polynomial calculation
+  func CalculatePolynomial23(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 23.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector23(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 24: Iterative polynomial calculation
+  func CalculatePolynomial24(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 24.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector24(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 25: Iterative polynomial calculation
+  func CalculatePolynomial25(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 25.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector25(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 26: Iterative polynomial calculation
+  func CalculatePolynomial26(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 26.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector26(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 27: Iterative polynomial calculation
+  func CalculatePolynomial27(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 27.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector27(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 28: Iterative polynomial calculation
+  func CalculatePolynomial28(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 28.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector28(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 29: Iterative polynomial calculation
+  func CalculatePolynomial29(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 29.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector29(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 30: Iterative polynomial calculation
+  func CalculatePolynomial30(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 30.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector30(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 31: Iterative polynomial calculation
+  func CalculatePolynomial31(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 31.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector31(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 32: Iterative polynomial calculation
+  func CalculatePolynomial32(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 32.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector32(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 33: Iterative polynomial calculation
+  func CalculatePolynomial33(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 33.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector33(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 34: Iterative polynomial calculation
+  func CalculatePolynomial34(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 34.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector34(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 35: Iterative polynomial calculation
+  func CalculatePolynomial35(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 35.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector35(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 36: Iterative polynomial calculation
+  func CalculatePolynomial36(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 36.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector36(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 37: Iterative polynomial calculation
+  func CalculatePolynomial37(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 37.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector37(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 38: Iterative polynomial calculation
+  func CalculatePolynomial38(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 38.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector38(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 39: Iterative polynomial calculation
+  func CalculatePolynomial39(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 39.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector39(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 40: Iterative polynomial calculation
+  func CalculatePolynomial40(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 40.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector40(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 41: Iterative polynomial calculation
+  func CalculatePolynomial41(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 41.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector41(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 42: Iterative polynomial calculation
+  func CalculatePolynomial42(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 42.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector42(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 43: Iterative polynomial calculation
+  func CalculatePolynomial43(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 43.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector43(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 44: Iterative polynomial calculation
+  func CalculatePolynomial44(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 44.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector44(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 45: Iterative polynomial calculation
+  func CalculatePolynomial45(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 45.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector45(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 46: Iterative polynomial calculation
+  func CalculatePolynomial46(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 46.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector46(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 47: Iterative polynomial calculation
+  func CalculatePolynomial47(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 47.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector47(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 48: Iterative polynomial calculation
+  func CalculatePolynomial48(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 48.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector48(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 49: Iterative polynomial calculation
+  func CalculatePolynomial49(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 49.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector49(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 50: Iterative polynomial calculation
+  func CalculatePolynomial50(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 50.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector50(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 51: Iterative polynomial calculation
+  func CalculatePolynomial51(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 51.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector51(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 52: Iterative polynomial calculation
+  func CalculatePolynomial52(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 52.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector52(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 53: Iterative polynomial calculation
+  func CalculatePolynomial53(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 53.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector53(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 54: Iterative polynomial calculation
+  func CalculatePolynomial54(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 54.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector54(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 55: Iterative polynomial calculation
+  func CalculatePolynomial55(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 55.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector55(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 56: Iterative polynomial calculation
+  func CalculatePolynomial56(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 56.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector56(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 57: Iterative polynomial calculation
+  func CalculatePolynomial57(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 57.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector57(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 58: Iterative polynomial calculation
+  func CalculatePolynomial58(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 58.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector58(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 59: Iterative polynomial calculation
+  func CalculatePolynomial59(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 59.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector59(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+  // Math Routine 60: Iterative polynomial calculation
+  func CalculatePolynomial60(base float, power int) float {
+    var accumulator float = 1.0
+    var factor float = base * 1.05 + 60.0
+
+    for step = 0, power, 1 {
+      if step % 2 == 0 {
+        accumulator = (accumulator * factor) - (base / 2.0)
+      } else {
+        accumulator = (accumulator + factor) * 0.98
+      }
+    }
+
+    var normalized float = accumulator
+    if normalized > 10000.0 && factor > 0.0 {
+      normalized = normalized / 100.0
+    } else if normalized < -10000.0 {
+      normalized = 0.0
+    }
+
+    return normalized
+  }
+
+  func TransformVector60(x float, y float, z float) List<float> {
+    var scale float = 0.25
+    var rx float = (x * scale) + (y * 0.5) - (z * 0.1)
+    var ry float = (y * scale) + (z * 0.5) - (x * 0.1)
+    var rz float = (z * scale) + (x * 0.5) - (y * 0.1)
+
+    return List<float>{rx, ry, rz}
+  }
+
+}

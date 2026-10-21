@@ -1,0 +1,51 @@
+import "StdLibrary.fcc" as StdLibrary
+import "Math.fcc" as Math
+import "List.fcc" as List
+
+/**
+  Player level and experience progression calculator.
+  */
+
+[platform_server]
+graph LevelProgression {
+  _BASE_XP int = 100
+  _GROWTH_FACTOR float = 1.15
+  _MAX_LEVEL int = 50
+
+  _ThresholdCache List<int> = List<int>{}
+
+  func CalculateRequiredXp(level int) int {
+    if level <= 1 {
+      return _BASE_XP
+    }
+
+    if level > _MAX_LEVEL {
+      level = _MAX_LEVEL
+    }
+
+    var total int = _BASE_XP
+    for currentLevel = 2, level, 1 {
+      var step float = total * _GROWTH_FACTOR
+      total = Math.Floor(step) as int
+    }
+
+    return total
+  }
+
+  func CanLevelUp(currentLevel int, currentXp int) bool {
+    if currentLevel >= _MAX_LEVEL {
+      return false
+    }
+
+    var required int = CalculateRequiredXp(currentLevel)
+    return currentXp >= required
+  }
+
+  func ComputeNextLevelState(currentLevel int, currentXp int) int {
+    if !CanLevelUp(currentLevel, currentXp) {
+      return currentLevel
+    }
+
+    return currentLevel + 1
+  }
+}

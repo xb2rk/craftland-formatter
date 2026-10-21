@@ -7,14 +7,17 @@
  * without modifying any source files on disk.
  */
 
-import { lstatSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { formatConfiguredSource } from "../src/service.mjs";
 
-const repository = resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const scriptsDirectory = resolve(process.argv[2] ?? join(repository, "Assets", "Scripts"));
+const packageRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const defaultTarget = existsSync(join(packageRoot, "Assets", "Scripts"))
+  ? join(packageRoot, "Assets", "Scripts")
+  : join(packageRoot, "tests", "fixtures");
+const scriptsDirectory = resolve(process.argv[2] ?? defaultTarget);
 
 const summary = {
   scanned: 0,
@@ -76,7 +79,7 @@ for (const path of discoverFiles(scriptsDirectory)) {
 
   if (result.output === null) {
     summary.diagnostics.push({
-      file: relative(repository, path),
+      file: relative(packageRoot, path),
       diagnostics: result.diagnostics,
     });
     continue;
@@ -97,7 +100,7 @@ for (const path of discoverFiles(scriptsDirectory)) {
   } else {
     summary.contentChanged += 1;
     summary.largestChangedFiles.push({
-      file: relative(repository, path),
+      file: relative(packageRoot, path),
       inputBytes: Buffer.byteLength(source),
     });
   }

@@ -84,26 +84,13 @@ test("nested commented collections retain their own sections with CRLF and force
     graph('    var values = List<int>{\n      // footer only\n\n    }'));
 });
 
-test("live feature flags and pooling sources retain the reported layout contracts", (t) => {
-  const candidates = [
-    new URL('../../../Assets/Scripts/Core/FeatureFlags.fcg', import.meta.url),
-    new URL('../../PlantsVsZombiesFCC/Assets/Scripts/Core/FeatureFlags.fcg', import.meta.url),
-  ];
-  const flagUrl = candidates.find((u) => existsSync(u));
-  if (!flagUrl) {
-    t.skip("No live game project available for FeatureFlags test");
-    return;
-  }
-  const flags = readFileSync(flagUrl, 'utf8');
+test("feature flags and pooling sources retain the reported layout contracts", () => {
+  const flags = readFileSync(new URL('./fixtures/telemetry_flags.fcg', import.meta.url), 'utf8');
   const output = check(flags);
   assert.match(output, /KillSwitchChestSystem\s*: true,\n\n\s*\/\/ The existing KillSwitch/);
-  for (const side of ['Client', 'Server']) {
-    const poolCandidates = [
-      new URL(`../../../Assets/Scripts/Global/${side}_EntityPool.fcg`, import.meta.url),
-      new URL(`../../PlantsVsZombiesFCC/Assets/Scripts/Global/${side}_EntityPool.fcg`, import.meta.url),
-    ];
-    const poolUrl = poolCandidates.find((u) => existsSync(u));
-    const source = readFileSync(poolUrl, 'utf8');
+
+  for (const side of ['client', 'server']) {
+    const source = readFileSync(new URL(`./fixtures/${side}_entity_manager.fcg`, import.meta.url), 'utf8');
     const formatted = check(source);
     assert.ok(formatted.includes('ToString(GetActiveCount(reportKey))'), side);
     assert.ok(!formatted.includes('ToString(\n'), side);

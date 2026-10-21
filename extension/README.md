@@ -12,7 +12,7 @@
   <a href="https://img.shields.io/badge/VS%20Code-%3E%3D%201.96-blue"><img src="https://img.shields.io/badge/VS%20Code-%3E%3D%201.96-blue" alt="VS Code" /></a>
   <a href="https://img.shields.io/badge/FC%20Grammar-1.11.0-orange"><img src="https://img.shields.io/badge/FC%20Grammar-1.11.0-orange" alt="FC Grammar" /></a>
   <a href="https://img.shields.io/badge/Runtime-Pure%20.mjs%20(0%20deps)-brightgreen"><img src="https://img.shields.io/badge/Runtime-Pure%20.mjs%20(0%20deps)-brightgreen" alt="Zero Dependencies" /></a>
-  <a href="https://img.shields.io/badge/Tests-237%20Passed-success"><img src="https://img.shields.io/badge/Tests-237%20Passed-success" alt="Tests" /></a>
+  <a href="https://img.shields.io/badge/Tests-238%20Passed-success"><img src="https://img.shields.io/badge/Tests-238%20Passed-success" alt="Tests" /></a>
 </p>
 
 ---
@@ -36,7 +36,7 @@
 1. Open VS Code.
 2. Go to **Extensions** (`Ctrl+Shift+X`).
 3. Click the **`...`** (Views and More Actions) menu in the top-right corner.
-4. Select **Install from VSIX...** and pick `fc-format-v5-vscode-0.9.0.vsix`.
+4. Select **Install from VSIX...** and pick `fc-format-v5-vscode-1.0.1.vsix`.
 
 ### 2. Configure Default Formatter
 Add the following to your VS Code `settings.json` (or configure via **Format Document With... &rarr; Configure Default Formatter**):

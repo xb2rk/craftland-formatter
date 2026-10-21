@@ -5,32 +5,16 @@ import { fileURLToPath } from "node:url";
 import { loadExtensionOracle } from "../src/grammar/extension-oracle.mjs";
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-
-function resolveProjectRoot() {
-  let dir = packageRoot;
-  for (let i = 0; i < 4; i++) {
-    if (existsSync(join(dir, "Assets", "Scripts"))) {
-      return dir;
-    }
-    dir = dirname(dir);
-  }
-  const fallback = resolve(packageRoot, "..", "PlantsVsZombiesFCC");
-  if (existsSync(join(fallback, "Assets", "Scripts"))) {
-    return fallback;
-  }
-  return null;
-}
-
-const projectRoot = resolveProjectRoot();
+const fixturesRoot = join(packageRoot, "tests", "fixtures");
 const extensionRoot = dirname(dirname(loadExtensionOracle().path));
 
 const roots = [
-  projectRoot ? join(projectRoot, "Assets", "Scripts") : null,
+  fixturesRoot,
   join(extensionRoot, "library", "release"),
-  projectRoot ? join(projectRoot, "Temp", "UGCLanguage", "editorGen") : null,
+  process.env.FC_CORPUS_DIR ? resolve(process.env.FC_CORPUS_DIR) : null,
 ].filter(Boolean);
 
-/** Walk only FC source files; the game inventory may change during development. */
+/** Walk only FC source files. */
 function collectFcFiles(root) {
   if (!root || !existsSync(root)) {
     return [];

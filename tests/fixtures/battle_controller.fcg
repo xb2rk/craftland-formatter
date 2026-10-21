@@ -1,0 +1,61 @@
+import "StdLibrary.fcc" as StdLibrary
+import "Math.fcc" as Math
+
+[platform_server]
+graph BattleController {
+  _Health float = 100.0
+  _MaxHealth float = 100.0
+  _ComboCount int = 0
+  _IsActive bool = true
+  _ArmorRating float = 15.0
+
+  func Tick(delta float) {
+    if !_IsActive || _Health <= 0.0 {
+      return
+    }
+
+    // Passive regeneration loop
+    if _Health < _MaxHealth && delta > 0.0 {
+      _Health += delta * 2.5
+      if _Health > _MaxHealth {
+        _Health = _MaxHealth
+      }
+    }
+  }
+
+  func ApplyDamage(amount float, isCritical bool) bool {
+    if amount <= 0.0 {
+      return false
+    }
+
+    var multiplier float = 1.0
+    if isCritical {
+      multiplier = 2.0
+      _ComboCount++
+    }
+
+    var mitigatedDamage float = Math.Max(1.0, amount - _ArmorRating)
+    var effectiveDamage float = mitigatedDamage * multiplier
+    _Health -= effectiveDamage
+
+    if _Health <= 0.0 {
+      _Health = 0.0
+      _IsActive = false
+      OnDefeated()
+    }
+
+    return true
+  }
+
+  func Heal(amount float) {
+    if !_IsActive || amount <= 0.0 {
+      return
+    }
+
+    _Health = Math.Min(_Health + amount, _MaxHealth)
+  }
+
+  func OnDefeated() {
+    _ComboCount = 0
+  }
+}

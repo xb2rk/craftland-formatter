@@ -1,0 +1,36 @@
+import "StdLibrary.fcc" as StdLibrary
+
+// Chaos stress test: Edge cases, comments in expressions, pragmas, weird formatting
+graph ChaosStressTest {
+  _MessyMatrix List<List<int>> = List<List<int>>{
+    List<int>{ 1 , 2 , 3 }, // inline comment 1
+    List<int>{ 4,5,6 },     /* block comment */
+    List<int>{ 7,8,9 },
+  }
+
+  func ComputeChaos(x int, y int) int {
+    // Nested arithmetic and logical precedence chain
+    var result int = (x + y * 3 - (x / 2)) << 2
+    if (x > 0 && y < 100) || (x == -1 && !(y >= 50)) {
+      result += 1
+    }
+
+    // fc-format-ignore
+    var   untouchedFormatting  int  =    100  +   200  *  300
+
+    /* fc-format-ignore-start */
+    var customBlock int =
+        x * 10 +
+        y * 20
+    /* fc-format-ignore-end */
+
+    return result + untouchedFormatting + customBlock
+  }
+
+  func LongBinaryChain(a int, b int, c int, d int) int {
+    return a +
+      b +
+      c +
+      d
+  }
+}

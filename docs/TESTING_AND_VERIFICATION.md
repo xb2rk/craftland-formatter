@@ -65,10 +65,10 @@ npm run probe:compiler
 # Compile 25 formatted fixtures through fccompile.exe
 npm run probe:compiler:formatted
 
-# Scan and dry-run format 244 game scripts under Assets/Scripts
+# Scan and dry-run format fixtures under tests/fixtures
 npm run audit:rollout
 
-# Run performance benchmark on large file (BigNumber.fcg - 88.5 KB)
+# Run performance benchmark on large file (tests/fixtures/big_math.fcg - 52 KB)
 npm run bench:printer
 
 # Verify that schema.json, config.d.ts and docs match registry
@@ -90,13 +90,13 @@ The output is re-lexed and compared with the input:
 ### Check 2: Idempotence Verification
 For any valid FC source code $S$:
 $$\text{format}(\text{format}(S)) \equiv \text{format}(S)$$
-A format operation must reach a stable fixed point in a single pass. The automated corpus test formats all 244 project scripts, re-formats the outputs, and asserts 0 byte diff.
+A format operation must reach a stable fixed point in a single pass. The automated corpus test formats all project fixtures, re-formats the outputs, and asserts 0 byte diff.
 
 ---
 
 ## 4. Performance Benchmarks
 
-Performance is measured continuously on [`Assets/Scripts/Utils/BigNumber.fcg`](file:///d:/Craftland%20Projects/PlantsVsZombiesFCC/Assets/Scripts/Utils/BigNumber.fcg) (88.5 KB, 3000+ lines):
+Performance is measured continuously on [`tests/fixtures/big_math.fcg`](../tests/fixtures/big_math.fcg) (52 KB, 1,900+ lines):
 
 | Optimization Milestone | Median Duration (10 Runs) | Improvement |
 |---|---|---|
