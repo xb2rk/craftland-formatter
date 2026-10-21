@@ -13,7 +13,7 @@ export const OPTIONS = Object.freeze([
   { path: "endOfLine", type: "enum", values: ["lf", "crlf", "preserve"], default: "preserve", cli: "--end-of-line", description: "Line ending for generated layout.", example: "crlf" },
   { path: "finalNewline", type: "boolean", default: true, cli: "--final-newline", description: "Append a final line ending when missing.", example: false },
   { path: "lineBreaks", type: "enum", values: ["canonical", "preserve"], default: "canonical", cli: "--line-breaks", description: "Reflow safe groups or retain existing breaks.", example: "preserve" },
-  { path: "wrap.calls", type: "enum", values: ["auto", "always", "never"], default: "auto", cli: "--wrap-calls", description: "Wrapping of call arguments.", example: "always" },
+  { path: "wrap.calls", type: "enum", values: ["preserve", "auto", "always", "never"], default: "preserve", cli: "--wrap-calls", description: "Wrapping of call arguments.", example: "auto" },
   { path: "wrap.parameters", type: "enum", values: ["preserve", "auto", "always", "never"], default: "preserve", cli: "--wrap-parameters", description: "Preserve parameter line-break positions or reflow function/event and function-type signatures.", example: "auto" },
   { path: "wrap.collections", type: "enum", values: ["auto", "always", "never"], default: "auto", cli: "--wrap-collections", description: "Wrapping of collection entries.", example: "always" },
   { path: "wrap.conditions", type: "enum", values: ["auto", "always", "never"], default: "auto", cli: "--wrap-conditions", description: "Wrapping of logical chains in conditions, assignments, returns and group items.", example: "always" },

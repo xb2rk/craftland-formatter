@@ -85,7 +85,7 @@ function resolveStyle(source, requested) {
   }
 
   for (const [name, mode] of Object.entries(style.wrap)) {
-    const allowed = name === "parameters" ? ["preserve", "auto", "always", "never"] : ["auto", "always", "never"];
+    const allowed = ["parameters", "calls"].includes(name) ? ["preserve", "auto", "always", "never"] : ["auto", "always", "never"];
     if (!allowed.includes(mode)) {
       throw new TypeError(`wrap.${name} must be ${allowed.join(", ")}`);
     }
@@ -611,9 +611,11 @@ class SyntaxPrinter {
     const padding = node.kind === "Collection" && this.style.spacing.brackets === "spaced" ? line : softline;
     const content = concat(padding, ...separated, trailingAllowed ? ifBreak(text(",")) : text(""));
     const closing = trailingAllowed ? ifBreak(hardline, padding) : text("");
+    const hasSourceBreak = /[\r\n]/.test(this.source.slice(open.end, close.start));
+    const callMode = this.style.wrap.calls === "preserve" ? (hasSourceBreak ? "always" : "never") : this.style.wrap.calls;
     const mode = node.kind === "Collection" || node.kind === "LocalizedString" ? this.style.wrap.collections :
       ["Signature", "FunctionTypeSignature"].includes(node.kind) ? this.style.wrap.parameters :
-      node.kind === "BareCall" || node.kind === "ValueCall" ? this.style.wrap.calls : "never";
+      node.kind === "BareCall" || node.kind === "ValueCall" ? callMode : "never";
 
     // A flat argument/entry list adds no structural indent. Independently
     // broken child expressions then add only their own continuation levels.

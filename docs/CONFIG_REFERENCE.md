@@ -18,7 +18,7 @@ Precedence for each option: explicit CLI flag > last matching `overrides` entry 
 | `endOfLine` | `"preserve"` | `"crlf"` | `--end-of-line` | Line ending for generated layout. |
 | `finalNewline` | `true` | `false` | `--final-newline` | Append a final line ending when missing. |
 | `lineBreaks` | `"canonical"` | `"preserve"` | `--line-breaks` | Reflow safe groups or retain existing breaks. |
-| `wrap.calls` | `"auto"` | `"always"` | `--wrap-calls` | Wrapping of call arguments. |
+| `wrap.calls` | `"preserve"` | `"auto"` | `--wrap-calls` | Wrapping of call arguments. |
 | `wrap.parameters` | `"preserve"` | `"auto"` | `--wrap-parameters` | Preserve parameter line-break positions or reflow function/event and function-type signatures. |
 | `wrap.collections` | `"auto"` | `"always"` | `--wrap-collections` | Wrapping of collection entries. |
 | `wrap.conditions` | `"auto"` | `"always"` | `--wrap-conditions` | Wrapping of logical chains in conditions, assignments, returns and group items. |

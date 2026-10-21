@@ -51,7 +51,7 @@ test("binary continuations compose with compact spacing, tabs, parentheses and c
     graph('    var value = (alpha +\n      beta +\n      gamma)'), { printWidth: 25 });
 
   const output = check(source, undefined,
-    { indentUnit: '\t', continuationIndent: 2, printWidth: 15 });
+    { indentUnit: '\t', continuationIndent: 2, printWidth: 15, wrap: { calls: "auto" } });
   assert.ok(output.includes('\t\tUse(\n\t\t\talpha +\n\t\t\t\t\tbeta +\n\t\t\t\t\tgamma,'), output);
   for (const operator of ['*', '/', '%', '&', '^', '|']) {
     check(graph(`var total = alpha ${operator} beta ${operator} gamma ${operator} delta`),
@@ -142,7 +142,8 @@ test("parameter auto/always/never remain available and preserve is limited to pa
   check(source, 'event Changed(first int, second int)\n', { printWidth: 5, wrap: { parameters: 'never' } }, 'fcc');
   check(source, 'event Changed(\n  first int,\n  second int)\n', { wrap: { parameters: 'always' } }, 'fcc');
   check(source, 'event Changed(\n  first int,\n  second int)\n', { printWidth: 20, wrap: { parameters: 'auto' } }, 'fcc');
-  for (const name of ['calls', 'collections', 'conditions']) {
+  assert.ok(formatSource(source, 'fcg', { wrap: { calls: 'preserve' } }));
+  for (const name of ['collections', 'conditions']) {
     assert.throws(() => formatSource(source, 'fcc', { wrap: { [name]: 'preserve' } }), TypeError);
   }
 });
@@ -154,4 +155,15 @@ test("parameter blank-line caps and protected commented signatures keep their bo
     'event Changed(\n  first int,\n  second int)\n', { blankLines: { maxConsecutive: 0 } }, 'fcc');
   const source = 'event Changed( first int, // exact\n    second int)\n';
   check(source, source, { printWidth: 5 }, 'fcc');
+});
+
+test("call wrapping preserves single-line calls by default and reflows when wrap.calls is auto", () => {
+  const singleLineCall = 'import "StdLibrary.fcc" as StdLibrary\n\ngraph Demo {\n  func Run() {\n    _EventContent = UIUtils.GetHUDWidget(thisEntity<Player>, _ActivitiesHUD, Res.Activities[EResKeyActivities.Event]) as entity<UIWidget>\n  }\n}\n';
+  const formattedDefault = formatSource(singleLineCall, 'fcg');
+  assert.equal(formattedDefault.diagnostics.length, 0);
+  assert.ok(formattedDefault.output.includes('_EventContent = UIUtils.GetHUDWidget(thisEntity<Player>, _ActivitiesHUD, Res.Activities[EResKeyActivities.Event]) as entity<UIWidget>'));
+
+  const formattedAuto = formatSource(singleLineCall, 'fcg', { printWidth: 80, wrap: { calls: 'auto' } });
+  assert.equal(formattedAuto.diagnostics.length, 0);
+  assert.ok(formattedAuto.output.includes('UIUtils.GetHUDWidget(\n      thisEntity<Player>,\n      _ActivitiesHUD,\n      Res.Activities[EResKeyActivities.Event]) as entity<UIWidget>'));
 });

@@ -55,7 +55,7 @@ test("width and call role choose grammar-safe closing layout", () => {
   ].join("\n");
 
   assert.equal(parseWithOracle(source, "fcg").accepted, true);
-  const result = formatSource(source, "fcg", { printWidth: 21 });
+  const result = formatSource(source, "fcg", { printWidth: 21, wrap: { calls: "auto" } });
   assert.deepEqual(result.diagnostics, []);
   assert.match(result.output, /List<int>\{\n\s+1,\n\s+2,\n\s+3,\n\s+\}/);
   assert.match(result.output, /DoSomething\(\n\s+1,\n\s+2,\n\s+3,\n\s+\)/);

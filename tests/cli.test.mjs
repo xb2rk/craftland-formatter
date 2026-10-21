@@ -79,7 +79,10 @@ test("parameter preservation defaults, overrides, flags and provenance are consi
   const explained = JSON.parse(cli(directory, ['--explain-config', file, '--wrap-parameters=preserve']).stdout);
   assert.equal(explained.options.wrap.parameters, 'preserve');
   assert.equal(explained.provenance['wrap.parameters'], 'CLI');
-  for (const flag of ['--wrap-calls=preserve', '--wrap-collections=preserve', '--wrap-conditions=preserve']) {
+  const explainedCalls = JSON.parse(cli(directory, ['--explain-config', file, '--wrap-calls=preserve']).stdout);
+  assert.equal(explainedCalls.options.wrap.calls, 'preserve');
+  assert.equal(explainedCalls.provenance['wrap.calls'], 'CLI');
+  for (const flag of ['--wrap-collections=preserve', '--wrap-conditions=preserve']) {
     assert.equal(cli(directory, [file, flag]).status, 2);
   }
   assert.equal(fs.readFileSync(file, 'utf8'), input);

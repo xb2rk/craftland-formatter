@@ -416,7 +416,7 @@ test("editor preserves parameters and collection sections while wrapping long ex
     'var values=Map<int,int>{1:2,\n\n// section\n123:4,}\n' +
     'LogInfo("first lengthy message=" + firstValue + " second=" + ToString(GetActiveCount(key)))\n}\n}';
   fs.writeFileSync(file, 'older disk contents');
-  fs.writeFileSync(join(directory, '.fcfmt.json'), JSON.stringify({ printWidth: 65 }));
+  fs.writeFileSync(join(directory, '.fcfmt.json'), JSON.stringify({ printWidth: 65, wrap: { calls: "auto" } }));
   const document = documentAt(file, input);
   const editor = fakeVscode(document);
   try {

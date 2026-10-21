@@ -122,12 +122,13 @@
       "properties": {
         "calls": {
           "description": "Wrapping of call arguments.",
-          "default": "auto",
+          "default": "preserve",
           "examples": [
-            "always"
+            "auto"
           ],
           "type": "string",
           "enum": [
+            "preserve",
             "auto",
             "always",
             "never"
@@ -471,12 +472,13 @@
                 "properties": {
                   "calls": {
                     "description": "Wrapping of call arguments.",
-                    "default": "auto",
+                    "default": "preserve",
                     "examples": [
-                      "always"
+                      "auto"
                     ],
                     "type": "string",
                     "enum": [
+                      "preserve",
                       "auto",
                       "always",
                       "never"
