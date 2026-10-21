@@ -1,0 +1,19 @@
+{
+  "ignoredOutVariables": true,
+  "suppressions": true,
+  "rules": {
+    "fc/no-unused-local": "warning",
+    "fc/no-unused-parameter": "off",
+    "fc/no-duplicate-declaration": "warning",
+    "fc/no-duplicate-import-alias": "error",
+    "fc/no-self-assignment": "warning",
+    "fc/no-empty-block": "warning",
+    "fc/no-unreachable": "warning",
+    "fc/no-constant-condition": "warning",
+    "fc/no-dead-store": "warning",
+    "fc/no-unresolved-project-import": "warning",
+    "fc/no-unresolved-imported-symbol": "warning",
+    "fc/no-platform-import-isolation": "warning",
+    "fc/no-unused-import": "warning"
+  }
+}

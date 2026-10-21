@@ -1,4 +1,21 @@
+# Package-local dependencies and generated output.
 node_modules/
 dist/
+coverage/
+*.tsbuildinfo
+
+# Test and tool scratch data.
+.tmp/
+.vitest/
 *.log
+npm-debug.log*
+
+# Local editor and operating-system state.
+.vscode/
+.idea/
 .DS_Store
+Thumbs.db
+
+# The repository-level ignore pattern excludes all lock files. This package's
+# npm lock file is intentionally versioned for reproducible installs.
+!package-lock.json

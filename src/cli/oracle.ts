@@ -1,209 +1,142 @@
+#!/usr/bin/env node
+
+import { runBaselineCompilerOracle } from "../oracle/runner.js";
+
+
 /**
- * @module cli/oracle - compiler-oracle runner used by P7 verification and CI.
+ * The options for the command-line interface.
+ *
+ * @interface CommandOptions
+ * @typedef {CommandOptions}
  */
-
-import { cp, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { dirname, extname, join, relative, resolve } from "node:path";
-import { tmpdir } from "node:os";
-import { fileURLToPath } from "node:url";
-import { formatSource } from "../format/format.js";
-
-const execFileAsync = promisify(execFile);
-/** Source extensions accepted by the oracle. */
-const SOURCE_EXTENSIONS = new Set([".fcg", ".fcc"]);
-/** Relative path to the compiler from LOCALAPPDATA. */
-const COMPILER_RELATIVE_PATH = [
-  "Programs",
-  "Craftland Studio",
-  "resources",
-  "LocalData",
-  "Utilities",
-  "UGCLanguage",
-  "release",
-  "fccompile_external.exe",
-] as const;
-/** Max buffer for compiler output (64 MiB). Duplicated from constants to avoid circular import in CLI. */
-const ORACLE_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
-
-export interface OracleOptions {
-  /** Project containing `Assets/` and `Temp/UGCLanguage/editorGen/`. */
-  projectRoot?: string;
-  /** Explicit compiler executable; defaults to the installed Craftland path. */
+interface CommandOptions {
   compilerPath?: string;
-  /** Keep the staging directory for post-failure inspection. */
-  keepTemp?: boolean;
+  json: boolean;
+  keepTemp: boolean;
+  projectRoot?: string;
+  format: boolean;
 }
 
-export interface OracleResult {
-  compilerPath: string;
-  stagingRoot?: string;
-  sourceFiles: number;
-  changedFiles: string[];
-  exitCode: number;
-  stdout: string;
-  stderr: string;
+
+/**
+ * Returns the usage string for the command-line interface.
+ *
+ * @returns {string} 
+ */
+function usage(): string {
+  return [
+    "Usage: npm run oracle -- [options]",
+    "",
+    "Compiles a temporary copy of the FC project (optionally formatted).",
+    "",
+    "Options:",
+    "  --project-root <path>  Project containing Assets/ (default: repository root)",
+    "  --compiler <path>      fccompile_external.exe override",
+    "  --keep-temp            Preserve the staging directory for inspection",
+    "  --format               Format staged FC sources before compiling",
+    "  --json                 Print a machine-readable result",
+    "  -h, --help             Show this help",
+  ].join("\n");
 }
 
 /**
- * Resolve the compiler path: `FC_COMPILER` env override, then LOCALAPPDATA, then fallback.
- *
- * @returns compiler path.
+ * Takes a value from the command-line arguments.
+ * And returns the next index and the value.
+ * 
+ * @param args - The command-line arguments.
+ * @param index - The current index in the arguments.
+ * @param option - The option name for error reporting.
+ * @returns - An object containing the next index and the value.
  */
-export function defaultCompilerPath(): string {
-  const configured = process.env.FC_COMPILER;
-  if (configured) {
-    return configured;
+function takeValue(args: readonly string[], index: number, option: string): { next: number; value: string } {
+  const value = args[index + 1];
+  if (!value || value.startsWith("-")) {
+    throw new Error(`${option} requires a value`);
   }
-  const localAppData = process.env.LOCALAPPDATA;
-  if (localAppData) {
-    return join(localAppData, ...COMPILER_RELATIVE_PATH);
+  return { next: index + 2, value };
+}
+
+
+/**
+ * Parses the command-line arguments and returns the options.
+ *
+ * @param {readonly string[]} args - List of command-line arguments.
+ * @returns {(CommandOptions | "help")} - The parsed options or "help" if help was requested.
+ */
+function parseArgs(args: readonly string[]): CommandOptions | "help" {
+  const options: CommandOptions = { format: false, json: false, keepTemp: false };
+  for (let index = 0; index < args.length;) {
+    const arg = args[index]!;
+    if (arg === "--help" || arg === "-h") {
+      return "help";
+    }
+    if (arg === "--project-root") {
+      const taken = takeValue(args, index, arg);
+      options.projectRoot = taken.value;
+      index = taken.next;
+      continue;
+    }
+    if (arg === "--compiler") {
+      const taken = takeValue(args, index, arg);
+      options.compilerPath = taken.value;
+      index = taken.next;
+      continue;
+    }
+    if (arg === "--keep-temp") {
+      options.keepTemp = true;
+      index += 1;
+      continue;
+    }
+    if (arg === "--format") {
+      options.format = true;
+      index += 1;
+      continue;
+    }
+    if (arg === "--json") {
+      options.json = true;
+      index += 1;
+      continue;
+    }
+    throw new Error(`unknown option '${arg}'`);
   }
-  // Keep a useful Windows fallback for shells that do not expose LOCALAPPDATA.
-  return join("C:\\Users", process.env.USERNAME ?? "N0BODY", "AppData", "Local", ...COMPILER_RELATIVE_PATH);
+  return options;
 }
 
-/**
- * Resolve the project root (three levels above built oracle module).
- *
- * @returns project root path.
- */
-function defaultProjectRoot(): string {
-  return resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-}
+async function main(args: readonly string[]): Promise<void> {
+  const options = parseArgs(args);
 
-/**
- * Recursively collect `.fcg`/`.fcc` files under a directory (sorted).
- *
- * @param directory - root to search.
- * @returns sorted file list.
- */
-async function collectSourceFiles(directory: string): Promise<string[]> {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files: string[] = [];
-  for (const entry of entries) {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await collectSourceFiles(path)));
-    } else if (entry.isFile() && SOURCE_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
-      files.push(path);
+  // If the user requested help, print the usage and exit.
+  if (options === "help") {
+    process.stdout.write(`${usage()}\n`);
+    return;
+  }
+
+  // Run the baseline compiler oracle with the parsed options.
+  const result = await runBaselineCompilerOracle(options);
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  } else {
+    process.stdout.write(`compiler: ${result.compilerPath}\n`);
+    process.stdout.write(`files: ${result.sourceFiles}\n`);
+    process.stdout.write(`exit code: ${result.exitCode}\n`);
+    if (result.stagingRoot) {
+      process.stdout.write(`staging: ${result.stagingRoot}\n`);
+    }
+    if (result.stdout) {
+      process.stdout.write(`\n${result.stdout}`);
+    }
+    if (result.stderr) {
+      process.stderr.write(result.stderr);
     }
   }
-  return files.sort((left, right) => left.localeCompare(right, "en"));
-}
 
-/**
- * Extract stdout/stderr from a failed execFile error.
- *
- * @param error - thrown error.
- * @param field - stdout or stderr.
- * @returns output string.
- */
-function errorOutput(error: unknown, field: "stdout" | "stderr"): string {
-  const value = error as { [key: string]: unknown };
-  const output = value[field];
-  if (typeof output === "string") {
-    return output;
-  }
-  if (output instanceof Buffer) {
-    return output.toString("utf8");
-  }
-  return "";
-}
-
-/**
- * Extract exit code from a failed execFile error.
- *
- * @param error - thrown error.
- * @returns exit code (default 1).
- */
-function errorCode(error: unknown): number {
-  const code = (error as { code?: unknown }).code;
-  return typeof code === "number" ? code : 1;
-}
-
-/**
- * Format a disposable project copy and run Craftland's compiler against it.
- * The caller owns no files in the project tree: all writes happen below the
- * generated temporary staging directory.
- */
-export async function runCompilerOracle(options: OracleOptions = {}): Promise<OracleResult> {
-  const projectRoot = resolve(options.projectRoot ?? defaultProjectRoot());
-  const compilerPath = resolve(options.compilerPath ?? defaultCompilerPath());
-  const sourceAssets = join(projectRoot, "Assets");
-  const sourceEditorGen = join(projectRoot, "Temp", "UGCLanguage", "editorGen");
-  const compilerInfo = await stat(compilerPath).catch(() => undefined);
-  if (!compilerInfo?.isFile()) {
-    throw new Error(`FC compiler not found: ${compilerPath}`);
-  }
-  const assetsInfo = await stat(sourceAssets).catch(() => undefined);
-  if (!assetsInfo?.isDirectory()) {
-    throw new Error(`project Assets directory not found: ${sourceAssets}`);
-  }
-  const editorGenInfo = await stat(sourceEditorGen).catch(() => undefined);
-  if (!editorGenInfo?.isDirectory()) {
-    throw new Error(`editorGen directory not found: ${sourceEditorGen}`);
-  }
-
-  const stagingRoot = await mkdtemp(join(tmpdir(), "fc-format-v2-oracle-"));
-  let preserve = options.keepTemp === true;
-  try {
-    await cp(sourceAssets, join(stagingRoot, "Assets"), { recursive: true });
-    await cp(sourceEditorGen, join(stagingRoot, "Temp", "UGCLanguage", "editorGen"), { recursive: true });
-
-    const stagedFiles = await collectSourceFiles(join(stagingRoot, "Assets"));
-    const changedFiles: string[] = [];
-    for (const path of stagedFiles) {
-      const source = await readFile(path, "utf8");
-      const formatted = formatSource(source);
-      if (formatted !== source) {
-        changedFiles.push(relative(stagingRoot, path));
-      }
-      await writeFile(path, formatted, "utf8");
-    }
-
-    const args = [
-      "-i",
-      "Assets",
-      "-e",
-      "Temp/UGCLanguage/editorGen",
-      "-s",
-      "Temp/UGCLanguage/editorGen/EditorGenSymbol.json",
-      "-o",
-      "Temp/UGCLanguage/compiled",
-    ];
-    let exitCode = 0;
-    let stdout = "";
-    let stderr = "";
-    try {
-      const result = await execFileAsync(compilerPath, args, {
-        cwd: stagingRoot,
-        windowsHide: true,
-        maxBuffer: ORACLE_MAX_BUFFER_BYTES,
-      });
-      stdout = result.stdout;
-      stderr = result.stderr;
-    } catch (error) {
-      exitCode = errorCode(error);
-      stdout = errorOutput(error, "stdout");
-      stderr = errorOutput(error, "stderr");
-    }
-    return {
-      compilerPath,
-      stagingRoot: preserve ? stagingRoot : undefined,
-      sourceFiles: stagedFiles.length,
-      changedFiles,
-      exitCode,
-      stdout,
-      stderr,
-    };
-  } catch (error) {
-    preserve = false;
-    throw error;
-  } finally {
-    if (!preserve) {
-      await rm(stagingRoot, { recursive: true, force: true });
-    }
+  if (result.exitCode !== 0) {
+    process.exitCode = result.exitCode;
   }
 }
+
+// Run the main function with the command-line arguments, and handle any errors.
+void main(process.argv.slice(2)).catch((error: unknown) => {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  process.exitCode = 2;
+});

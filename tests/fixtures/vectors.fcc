@@ -1,9 +1,0 @@
-/**
- * Golden: vectors / indexing - tight brackets, List/Map, no trailing comma on flat.
- */
-var pos = Vector3{1, 2, 3}
-var dir = Vector2{0.5, 1.0}
-var arr = List<int>{1, 2, 3}
-var v = arr[0]
-var m = lookup["key"]
-var mat = Map<string, Vector3>{"origin": Vector3{0, 0, 0}}

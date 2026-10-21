@@ -1,65 +1,71 @@
-# FC Format v2 - VS Code Extension
+# FC Format
 
-Deterministic formatter and structural linter for Craftland Studio `.fcg` / `.fcc` (FC Language). Delegates 100% of behavior to `tools/fc-format-v2` - no duplicated grammar.
+FC Format is a deterministic, compiler-safe formatter for Craftland Studio FC source files: `.fcg` graph files and `.fcc` declarations. It is powered by the same grammar-aware v3 core used by the CLI; the extension contains no duplicated FC parser or printer.
 
 ## Features
 
-- **Format** - `Format Document` + `Format Selection` (full-document fallback to preserve the delimiter tree). Respects `editor.formatOnSave` and `[ffugclanguage].editor.defaultFormatter`.
-- **Lint** - off by default (`fcFormatV2.enableLint: false`) to avoid noise. `Lint Document`, `Fix All Auto-Fixable`, and per-diagnostic QuickFix + `SourceFixAll` code actions.
-- **Status bar** - `FC` indicator (hidden when lint is off, `$(warning) FC N` when diagnostics exist).
-- **Settings** - `fcFormatV2.*` maps 1:1 to the core `Config` (17 knobs: `printWidth`, `tabWidth`, `endOfLine`, `bracketSpacing`, `spaceInside*`, `wrapCalls`, `trailingComma`, …).
+- **Format Document** through VS Code's standard formatter command, including `editor.formatOnSave`.
+- **Format Selection is intentionally unavailable for now.** A selection cannot be reformatted safely without first rendering a syntactically enclosing AST subtree in its surrounding width context; global import normalization must also remain excluded from a range edit.
+- **Compiler-safe refusal**: malformed input is never partially rewritten. Details are written to the **FC Format** Output channel.
+- **Integrated P7B/P7C linting**: scope-aware and conservative intraprocedural diagnostics for unused locals, duplicate declarations/import aliases, self-assignment, unreachable code, empty blocks, constant conditions, and dead stores. Linting is deterministic and never invokes the compiler.
+- **P7D workspace diagnostics**: the extension indexes the first workspace folder, overlays unsaved buffers, and reports unresolved project imports, missing named project declarations, explicit server/client import isolation violations, and unused imports. Complete relative project namespace imports use the indexed declaration surface to recognize unique unqualified enum, tuple, type, define, and function uses. Generated and bare libraries stay opaque until a public symbol surface exists; import cycles remain graph metadata, not errors. Dirty-buffer and incremental target invalidation follow the same core contract as the CLI.
+- **Real settings**: every exposed setting maps to a tested v3 formatter option. No cosmetic setting silently does nothing.
 
-## Quick Install (VSIX)
+## Install from VSIX
 
-```powershell
-cd tools/fc-format-v2
-npm run build
-cd extension
-npm install
-npm run build              # build core + bundle dist/extension.js
-npx vsce package            # -> fc-format-v2-vscode-0.1.0.vsix
-code --install-extension fc-format-v2-vscode-0.1.0.vsix --force
-# or: Extensions → … → Install from VSIX
-```
+1. Build the extension from this directory: `npm install` then `npm run package`.
+2. In VS Code, open **Extensions** → **…** → **Install from VSIX…**.
+3. Choose the generated `.vsix`, then run **Developer: Reload Window**.
 
-Reload Window after install: `Ctrl+Shift+P → Developer: Reload Window`.
+For development, open this folder in VS Code, run `npm install`, then press `F5`. The build bundles the formatter core into `dist/extension.js` and does not depend on files outside the installed extension.
 
-Enable format on save and the default formatter (once):
+## Quick start
+
+Set FC Format as the formatter and enable format on save:
 
 ```jsonc
-// settings.json
 "[ffugclanguage]": {
-  "editor.defaultFormatter": "fc-format.fc-format-v2-vscode",
+  "editor.defaultFormatter": "fc-format.fc-format-v3-vscode",
   "editor.formatOnSave": true
-},
-"fcFormatV2.printWidth": 100,
-"fcFormatV2.enableLint": true // optional - off by default
+}
 ```
 
-One-command dev install (skips if `code` CLI is missing):
-
-```powershell
-npm run build:install
-```
-
-## Commands
-
-- `FC Format v2: Format Document` - format the active `.fcc`/`.fcg` file.
-- `FC Format v2: Lint Document` - refresh diagnostics on demand.
-- `FC Format v2: Fix All Auto-Fixable` - apply all safe fixes (sorted bottom-up, then re-format).
-
-Range formatting is provided via VS Code's `Format Selection` but falls back to full-document formatting to keep the block/call/data tree valid.
+Use **FC Format: Format Document** from the Command Palette at any time.
+Use **FC Format: Lint Document** to refresh diagnostics manually; diagnostics also update as FC documents change.
 
 ## Settings
 
-All `fcFormatV2.*` settings mirror `src/format/config.ts` (`Config`). See `tools/fc-format-v2/README.md` for the knob table and the 17-knob spec. The extension registers `configurationDefaults` so `[ffugclanguage]` already defaults to this formatter.
+All settings live under `fcFormat.*` and can be scoped per workspace or per language.
 
-## Development
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `printWidth` | `120` | Preferred width for automatic wrapping. |
+| `tabWidth` / `useTabs` | `2` / `false` | Indentation style. |
+| `spaceAroundOperators` | `true` | Binary operator spacing where tokenization remains safe. |
+| `spaceAfterComma` | `true` | Inline comma spacing. |
+| `wrapCalls` | `auto` | `never`, `auto`, or `always` call/signature wrapping. |
+| `wrapCollections` | `auto` | `never`, `auto`, or `always` composite wrapping. |
+| `collapseBlankLines` | `true` | Collapse repeated blank lines. |
+| `insertFinalNewline` | `true` | Add exactly one final newline. |
+| `lint.enabled` | `true` | Show P7B/P7C/P7D.3E static-analysis diagnostics. |
+| `lint.suppressions` | `true` | Honor `fc-lint-disable-next-line` comments. |
+| `lint.ignoredOutVariables` | `true` | Ignore intentionally write-only `out var` bindings. |
+| `lint.rules` | `{}` | Override `fc/*` rule severities (`off`, `error`, `warning`, `information`, `hint`). |
 
-- Open `tools/fc-format-v2/extension` as a workspace and press `F5` (Run Extension) - `launch.json` uses `preLaunchTask: npm: build`.
-- `npm run typecheck` - `tsc --noEmit` (extension only).
-- Core formatter lives in `tools/fc-format-v2/src` - `npm --prefix .. run build` must run before `npm run build` in `extension/` (bundled via `esbuild --bundle --external:vscode`).
+FC Format intentionally does not offer arbitrary trailing commas, spacing inside every delimiter, or global EOL conversion. Those choices can change FC tokenization or protected multiline literal/comment bytes.
+Lint rules are intentionally separate from formatting. See the core package's [P7A design](../docs/PHASE_7A_LINTER_DESIGN.md), [P7C control-flow record](../docs/PHASE_7C_CONTROL_FLOW.md), [P7D workspace record](../docs/PHASE_7D_WORKSPACE_RULES.md), and [P7D.3 import-surface record](../docs/PHASE_7D3_IMPORT_SURFACE.md) for rule IDs, named-import validity, CLI/editor parity, suppression policy, and conservative analysis boundaries.
+
+## Development and release checks
+
+```powershell
+npm run typecheck
+npm test
+npm run build
+npm run package
+```
+
+Before publishing, replace the placeholder `publisher` in `package.json` with the verified Visual Studio Marketplace publisher ID and increment the version. Marketplace publishing is intentionally not performed by this repository workflow.
 
 ## License
 
-MIT - see `LICENSE`.
+MIT. See [LICENSE](LICENSE).

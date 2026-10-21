@@ -1,0 +1,11 @@
+{
+  "printWidth": 120,
+  "tabWidth": 2,
+  "useTabs": false,
+  "spaceAroundOperators": true,
+  "spaceAfterComma": true,
+  "wrapCalls": "auto",
+  "wrapCollections": "auto",
+  "collapseBlankLines": true,
+  "insertFinalNewline": true
+}

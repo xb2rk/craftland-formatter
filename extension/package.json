@@ -1,181 +1,181 @@
 {
-  "name": "fc-format-v2-vscode",
-  "displayName": "FC Format v2",
-  "description": "Formatter and linter for Craftland Studio .fcg/.fcc files.",
-  "version": "0.1.0",
+  "name": "fc-format-v3-vscode",
+  "displayName": "FC Format",
+  "description": "A deterministic, compiler-safe formatter and conservative workspace linter for Craftland Studio FC files.",
+  "version": "0.3.0",
   "publisher": "fc-format",
   "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/craftland/fc-format-v2"
+    "url": "https://github.com/xb2rk/PlantsVsZombiesFCC.git",
+    "directory": "tools/fc-format-v3/extension"
+  },
+  "homepage": "https://github.com/xb2rk/PlantsVsZombiesFCC/tree/main/tools/fc-format-v3/extension#readme",
+  "bugs": {
+    "url": "https://github.com/xb2rk/PlantsVsZombiesFCC/issues"
   },
   "type": "module",
   "engines": {
-    "vscode": "^1.82.0"
+    "vscode": "^1.95.0"
   },
   "categories": [
     "Formatters",
-    "Linters",
     "Programming Languages"
+  ],
+  "keywords": [
+    "craftland",
+    "fc",
+    "formatter",
+    "fcg",
+    "fcc"
   ],
   "activationEvents": [
     "onLanguage:ffugclanguage"
   ],
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
   "contributes": {
-    "languages": [
-      {
-        "id": "ffugclanguage",
-        "extensions": [
-          ".fcg",
-          ".fcc"
-        ]
-      }
-    ],
     "commands": [
       {
-        "command": "fcFormatV2.formatDocument",
-        "title": "FC Format v2: Format Document"
+        "command": "fcFormat.formatDocument",
+        "title": "FC Format: Format Document",
+        "category": "FC Format"
       },
       {
-        "command": "fcFormatV2.lintDocument",
-        "title": "FC Format v2: Lint Document"
-      },
-      {
-        "command": "fcFormatV2.fixAll",
-        "title": "FC Format v2: Fix All Auto-Fixable"
+        "command": "fcFormat.lintDocument",
+        "title": "FC Format: Lint Document",
+        "category": "FC Format"
       }
     ],
     "configuration": {
-      "title": "FC Format v2",
+      "title": "FC Format",
       "properties": {
-        "fcFormatV2.printWidth": {
+        "fcFormat.printWidth": {
           "type": "number",
-          "default": 100,
-          "minimum": 1
+          "default": 120,
+          "minimum": 20,
+          "maximum": 1000,
+          "description": "Preferred maximum line width for automatic wrapping."
         },
-        "fcFormatV2.tabWidth": {
+        "fcFormat.tabWidth": {
           "type": "number",
           "default": 2,
           "minimum": 1,
-          "maximum": 16
+          "maximum": 16,
+          "description": "Visual width of one indentation level."
         },
-        "fcFormatV2.useTabs": {
-          "type": "boolean",
-          "default": false
-        },
-        "fcFormatV2.endOfLine": {
-          "type": "string",
-          "enum": [
-            "lf",
-            "crlf"
-          ],
-          "default": "lf"
-        },
-        "fcFormatV2.collapseBlankLines": {
-          "type": "boolean",
-          "default": true
-        },
-        "fcFormatV2.trimTrailingWhitespace": {
-          "type": "boolean",
-          "default": true
-        },
-        "fcFormatV2.insertFinalNewline": {
-          "type": "boolean",
-          "default": true
-        },
-        "fcFormatV2.spaceAroundOperators": {
-          "type": "boolean",
-          "default": true
-        },
-        "fcFormatV2.spaceInsideParens": {
-          "type": "boolean",
-          "default": false
-        },
-        "fcFormatV2.spaceInsideBrackets": {
-          "type": "boolean",
-          "default": false
-        },
-        "fcFormatV2.spaceInsideBraces": {
-          "type": "boolean",
-          "default": false
-        },
-        "fcFormatV2.spaceAfterComma": {
-          "type": "boolean",
-          "default": true
-        },
-        "fcFormatV2.bracketSpacing": {
-          "type": "string",
-          "enum": [
-            "none",
-            "space"
-          ],
-          "default": "none"
-        },
-        "fcFormatV2.wrapCalls": {
-          "type": "string",
-          "enum": [
-            "never",
-            "auto",
-            "always"
-          ],
-          "default": "auto"
-        },
-        "fcFormatV2.wrapCollections": {
-          "type": "string",
-          "enum": [
-            "never",
-            "auto",
-            "always"
-          ],
-          "default": "auto"
-        },
-        "fcFormatV2.callBreakStyle": {
-          "type": "string",
-          "enum": [
-            "breakAll",
-            "hugFirst"
-          ],
-          "default": "breakAll"
-        },
-        "fcFormatV2.enableLint": {
+        "fcFormat.useTabs": {
           "type": "boolean",
           "default": false,
-          "description": "Enable live diagnostics (off by default). Run Lint/FixAll commands to lint on demand."
+          "description": "Indent with tabs instead of spaces."
         },
-        "fcFormatV2.trailingComma": {
+        "fcFormat.spaceAroundOperators": {
+          "type": "boolean",
+          "default": true,
+          "description": "Insert spaces around binary operators when grammar-safe."
+        },
+        "fcFormat.spaceAfterComma": {
+          "type": "boolean",
+          "default": true,
+          "description": "Insert a space after inline commas."
+        },
+        "fcFormat.wrapCalls": {
           "type": "string",
           "enum": [
             "never",
-            "multiline",
+            "auto",
             "always"
           ],
-          "default": "multiline"
+          "default": "auto",
+          "description": "Choose when calls and signatures wrap after commas."
+        },
+        "fcFormat.wrapCollections": {
+          "type": "string",
+          "enum": [
+            "never",
+            "auto",
+            "always"
+          ],
+          "default": "auto",
+          "description": "Choose when FC collection and composite values wrap after commas."
+        },
+        "fcFormat.collapseBlankLines": {
+          "type": "boolean",
+          "default": true,
+          "description": "Collapse repeated blank lines to one blank line."
+        },
+        "fcFormat.insertFinalNewline": {
+          "type": "boolean",
+          "default": true,
+          "description": "End formatted files with one newline."
+        },
+        "fcFormat.lint.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show P7B/P7C/P7D.3E static-analysis diagnostics for FC files."
+        },
+        "fcFormat.lint.suppressions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Honor fc-lint-disable-next-line comments."
+        },
+        "fcFormat.lint.ignoredOutVariables": {
+          "type": "boolean",
+          "default": true,
+          "description": "Do not report out var bindings that are intentionally write-only."
+        },
+        "fcFormat.lint.rules": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "off",
+              "error",
+              "warning",
+              "information",
+              "hint"
+            ]
+          },
+          "description": "Override individual FC lint rule severities by rule ID."
         }
       }
     }
   },
   "configurationDefaults": {
     "[ffugclanguage]": {
-      "editor.defaultFormatter": "fc-format.fc-format-v2-vscode"
+      "editor.defaultFormatter": "fc-format.fc-format-v3-vscode"
     }
   },
   "files": [
-    "dist",
+    "dist/extension.js",
+    "dist/extension.js.map",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm --prefix .. run build && npx esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=dist/extension.js --format=esm --sourcemap",
-    "build:install": "npm run build && npx vsce package --no-dependencies && code --install-extension fc-format-v2-vscode-0.1.0.vsix --force || echo \"code CLI not found - VSIX built\"",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "node scripts/build.mjs",
+    "typecheck": "node scripts/build-core.mjs && tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --import tsx --test test/*.test.ts",
     "vscode:prepublish": "npm run build",
-    "package": "vsce package"
+    "package": "vsce package --no-dependencies --out dist/fc-format-v3-vscode.vsix"
   },
   "devDependencies": {
-    "@types/vscode": "^1.82.0",
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.2.1",
     "esbuild": "^0.25.0",
-    "typescript": "^5.9.3"
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.0"
+  },
+  "allowScripts": {
+    "@vscode/vsce-sign@2.1.0": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "keytar@7.9.0": true
   }
 }

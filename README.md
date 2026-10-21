@@ -1,124 +1,107 @@
-# fc-format-v2
+# FC Format
 
-Deterministic formatter and structural linter for Craftland Studio `.fcg` / `.fcc`,
-written from scratch against the compiled ANTLR grammar shipped in the VS Code
-extension. This is the successor to `tools/fc-format` (v1) and intentionally
-shares no code with it.
+Fresh, deterministic formatting infrastructure for Craftland Studio FC (`.fcg` and `.fcc`) source.
 
-## Ground rules
+## Status
 
-- **Grammar authority** - token ids come from `scripts/gen-grammar.mjs`, which
-  parses `%VSCEXT%/dist/server_syntax.js`. Never hand-edit `src/grammar.generated.ts`.
-- **Single classifier** - `src/classifier.ts` is the *only* structural model;
-  both the formatter and linter consume it so rules cannot drift.
-- **Pipeline** - `tokenize → items → classify → emit → printDoc → normalize`.
-  Higher phases never re-interpret source text directly.
-- **Style is explicit** - grammar-required layout is fixed; implemented Tier-3
-  knobs are validated by tests and exposed through `Config`.
+Phase 0/1 infrastructure, the complete parser (Phases 2A–2E), the formatter (Phases 3B–3D),
+Phase 4 hardening, Phase 5 product integration, and Phase 7B–7C linting are complete. Phase 7D.0–7D.3E now provide the
+workspace index and conservative cross-file diagnostics. The package provides a lossless lexer,
+source-referential parser, deterministic formatter, document printer, import-run sorting, and a
+formatting/linting CLI. The linter reports conservative scope and control-flow diagnostics without
+requiring the Craftland compiler or a private semantic server.
 
-## Quick start
+The formatter contract is [docs/GRAMMAR.md](docs/GRAMMAR.md). The project is a fresh implementation; the `-v3` folder name is only a workspace location.
 
-```bash
-cd tools/fc-format-v2
-npm install
-npm run grammar:gen       # regenerate grammar.generated.ts (idempotent)
-npm run typecheck         # tsc --noEmit
-npm test                    # vitest
-npm run fmt -- <file>       # format in place (uses src/ via tsx during dev)
-npm run check -- <path>     # fail if any file would change
-npm run lint -- <path>      # convention/grammar diagnostics
-npm run oracle -- --json    # disposable full-project compiler check
-```
+## Requirements
 
-### Formatting a whole folder
+- Node.js 20.19 or newer
+- npm
+- Craftland Studio and its FC compiler for the later oracle command
 
-The CLI recursively discovers `.fcc` and `.fcg` files (skipping `.git`,
-`node_modules`, and `dist`). From the repository root:
+## Development
 
-```powershell
-cd tools/fc-format-v2
-npm run fmt -- ..\..\Assets\Scripts       # format in place
-npm run check -- ..\..\Assets\Scripts     # CI check; exit 1 on drift
-npm run lint -- --json ..\..\Assets\Scripts
-```
-
-After `npm run build`, the same commands can be run through the packaged
-binary: `node dist/cli.js fmt <folder>` (or install/link the package to expose
-the `fc-format-v2` command).
-
-### VS Code extension
-
-The adapter lives in `extension/` and delegates all behavior to the core API;
-it does not replace the official `ffugclanguage` extension.
-
-**Install via VSIX:**
-
-```powershell
-cd tools/fc-format-v2
+```sh
+npm ci
+npm run typecheck
+npm test
 npm run build
-cd extension
-npm install
-npm run build              # build core + bundle dist/extension.js
-npx vsce package            # -> fc-format-v2-vscode-0.1.0.vsix
-code --install-extension fc-format-v2-vscode-0.1.0.vsix --force
-# or: Extensions → … → Install from VSIX
+npm run verify:grammar
+npm run oracle
+npm run format -- path/to/file.fcg
+npm run format:check -- path/to/file.fcg
+npm run format -- --config .fcformatrc.json Assets/Scripts
+npm run lint -- Assets/Scripts
+npm run lint -- --config .fclintrc.json Assets/Scripts
 ```
 
-Reload Window after install: `Ctrl+Shift+P → Developer: Reload Window`.
+`npm run ci` runs typechecking, tests, and the production build without requiring a local VS Code
+extension. `npm run verify:grammar` checks the committed token table against an installed Craftland
+Studio extension. `npm run oracle` stages a copy of the project and invokes the FC compiler. Add
+`--format` to format only the staged copy before compilation; the working tree and `Assets/` remain
+untouched.
 
-Format on save and the default formatter:
+The formatting CLI accepts individual files or directories (searched recursively). `--check` prints
+files that would change and exits non-zero for CI. Copy [.fcformatrc.example.json](.fcformatrc.example.json)
+to `.fcformatrc.json` to begin with a documented configuration. `--config` accepts a JSON object
+containing only the supported layout settings, for example:
 
-```jsonc
-// settings.json
-"[ffugclanguage]": {
-  "editor.defaultFormatter": "fc-format.fc-format-v2-vscode",
-  "editor.formatOnSave": true
-},
-"fcFormatV2.printWidth": 100
+```json
+{
+  "printWidth": 120,
+  "tabWidth": 2,
+  "useTabs": false,
+  "wrapCalls": "auto",
+  "wrapCollections": "auto"
+}
 ```
 
-**Development host** - open `tools/fc-format-v2/extension` in VS Code and press `F5` (Run Extension, `preLaunchTask: npm: build`). In the new window, open any `.fcc`/`.fcg` file. `Format Document`, range formatting (full-document fallback), live diagnostics (when `fcFormatV2.enableLint: true`), and `Fix All` are provided by the adapter. Settings under `fcFormatV2.*` map 1:1 to the core `Config` fields (17 knobs).
+See [extension/README.md](extension/README.md) for the complete setting contract and VS Code
+installation/development instructions. P7B rule details are recorded in
+[docs/PHASE_7B_LINTER.md](docs/PHASE_7B_LINTER.md), and the CFG/data-flow design and gates are
+recorded in [docs/PHASE_7C_CONTROL_FLOW.md](docs/PHASE_7C_CONTROL_FLOW.md). The P7D.0–P7D.3E
+workspace/index and cross-file rule contract is recorded in [docs/PHASE_7D_WORKSPACE_RULES.md](docs/PHASE_7D_WORKSPACE_RULES.md),
+with the declaration-surface resolver in [docs/PHASE_7D3_IMPORT_SURFACE.md](docs/PHASE_7D3_IMPORT_SURFACE.md).
 
-## Module map (`src/`)
+The linter accepts individual files or directories and never modifies source. It emits stable
+`fc/*` rule IDs and exits non-zero when diagnostics are found. Use `--json` for machine-readable
+output. Copy [.fclintrc.example.json](.fclintrc.example.json) for rule severity overrides. Syntax
+errors are blocking `fc/parse` diagnostics; valid files can suppress one following line with
+`// fc-lint-disable-next-line fc/no-unused-local`. CFG-backed P7C rules are
+`fc/no-unreachable`, `fc/no-constant-condition`, and `fc/no-dead-store`; the latter two default
+to `warning` and conservatively stop at unknown effects. Workspace rules are
+`fc/no-unresolved-project-import`, `fc/no-unresolved-imported-symbol`,
+`fc/no-platform-import-isolation`, and `fc/no-unused-import`.
+Use `npm run lint -- --workspace Assets/Scripts` to enable the workspace adapter in the CLI;
+the extension builds a snapshot from the first workspace folder and overlays unsaved documents.
 
-| File | Role |
-|---|---|
-| `lex/grammar.generated.ts` | `@generated` token id table - re-run `npm run grammar:gen` to refresh. |
-| `lex/grammar.ts` | Keyword/punctuator/operator lookup tables on top of `grammar.generated.ts`. |
-| `lex/tokens.ts` | `Token` / `TokenKind` types and trivia helpers. |
-| `lex/reader.ts` | `StringReader` - peek/advance/span over source; tokenizer's cursor. |
-| `lex/tokenizer.ts` | Source text → lossless raw `Token[]`; it never invents parser `EOS`. |
-| `lex/items.ts` | Raw tokens → ordered `LexedDocument` trivia/items with source spans. |
-| `syntax/classifier.ts` | Lexed document → source-ordered delimiter tree (`BLOCK`/`CALL`/`DATA`/`STRUCT`/`MAP`). |
-| `syntax/query.ts` | Structural predicates (`isBlockOpen`, `isStatementCall`, …). |
-| `syntax/spacing.ts` | `shouldSpaceBefore` - the single Tier 1/2/3 spacing policy surface. |
-| `print/emit/index.ts` | Classifier tree + spacing → `Doc` (`helpers.ts`/`trivia.ts` extracted). |
-| `print/doc.ts` | Wadler/Prettier `Doc` IR + `printDoc` (greedy width fitting). |
-| `print/normalize.ts` | §15 output hygiene (EOL, BOM, trailing whitespace, final newline). |
-| `format/config.ts` | Implemented formatter knobs (17) + defaults + runtime validation. |
-| `format/imports.ts` | Import block collect/sort/render (grammar-correct library vs script). |
-| `format/format.ts` | Orchestrator: `tokenize → items → classify → emit → printDoc → normalize`. |
-| `lint/analysis.ts` | Shared lint analysis (`buildAnalysis`, `collectImports`, diagnostics). |
-| `lint/index.ts` | Linter orchestrator + 7 `push*Rules` families. |
-| `cli/cli.ts` | `fmt` / `check` / `lint` command entry point. |
-| `shared/import-bucket.ts` | Deduplicated 5-bucket import sort (used by formatter + linter). |
-| `index.ts` | Public API re-exports for programmatic use. |
+## Boundaries
 
-## Tests & goldens
+- This package is private and has its own `package-lock.json`, `.npmrc`, `.gitignore`, and TypeScript configuration.
+- Generated output, dependencies, coverage, scratch data, and editor state stay untracked beneath this directory.
+- The parent repository's FC assets are read-only inputs to the corpus and future compiler-oracle tests. The oracle must operate on a temporary staged copy.
+- The linter consumes this parser's syntax tree. It has no separate lexer/parser and does not invoke
+  Craftland's private semantic bundle.
 
-- Unit tests live in `tests/unit/` (mirroring `src/`), fixtures in `tests/fixtures/` (8 canonical `.fcc` files: `imports`, `graphs`, `enums`, `collections`, `flow`, `operators`, `comments`, `vectors`). Run `npm test` (vitest, `tests/**/*.test.ts`).
-- Invariants: every fixture is idempotent (`format(fixture) === fixture`) + chaos-convergent (`format(chaos(canonical)) === canonical`). Real corpus `Assets/Scripts` is checked for lossless tokenization and idempotency when present (skipped on CI).
-- To update a golden: edit the `.fcc` in place, then `node --import tsx -e "import{readFileSync,writeFileSync}from'node:fs';import{formatSource}from'./src/format/format.ts';const p='tests/fixtures/<name>.fcc';writeFileSync(p,formatSource(readFileSync(p,'utf8')))"`.
+## Planned source ownership
 
-## Adding a rule / knob
+- `src/grammar/`: token vocabulary provenance and precedence data.
+- `src/lex/`: lossless tokens and trivia.
+- `src/parser/`: recursive-descent FC parser.
+- `src/syntax/`: syntax-tree nodes and diagnostics.
+- `src/doc/` and `src/format/`: layout documents, printer, and formatting rules.
+- `src/imports/`: shared import parsing, ordering, and rendering.
+- `src/lint/`: validated lint contracts, binder/scopes, AST-local rules, and intraprocedural
+  CFG/data-flow analysis.
+- `src/workspace/`: pure in-memory workspace snapshots, canonical import resolution, reverse
+  dependency edges, cycle components, and workspace diagnostics. Import cycles remain metadata,
+  not diagnostics. Complete relative project namespace imports are checked using the indexed
+  declaration surface: direct alias uses and uniquely resolved bare enum/tuple/type/define/function
+  names count as use; ambiguous or incomplete cases remain unknown. Generated and bare libraries
+  remain opaque and are excluded because they may expose members unqualified. Explicit named
+  project imports remain checked; complete targets also report missing named
+  declarations through `fc/no-unresolved-imported-symbol`. CLI and VS Code
+  share the same snapshot/invalidation contract; multi-root indexing and import
+  edit code actions remain deferred.
 
-1. Decide the tier (`FC_FORMATTER_SPEC.md` §2). Tier 3 knobs land in `src/config.ts` only with behavior and tests.
-2. Implement the behavioural hook in the *single* applicable layer (spacing →
-   `spacing.ts`, punctuation → `emit.ts`, structure → `classifier.ts`).
-3. Add a focused regression/golden test under `tests/unit/**/*.test.ts` or a new fixture in `tests/fixtures/` that pins the output.
-
-## Related docs
-
-- `docs/FC_FORMATTER_SPEC.md` (co-located) - user-facing rules + Tier model (§16: 17 knobs).
-- `docs/FC_LINTER_SPEC.md` - linter rule contract (shares `syntax/classifier.ts`).
-- `docs/V2_ROADMAP.md` - phase decisions and verification evidence.
+See [docs/PHASE_0_DESIGN.md](docs/PHASE_0_DESIGN.md) for the recorded implementation decision and phase gates.

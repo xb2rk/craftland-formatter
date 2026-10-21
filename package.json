@@ -1,47 +1,38 @@
 {
-  "name": "fc-format-v2",
+  "name": "fc-format",
   "version": "0.1.0",
   "private": true,
+  "description": "Deterministic formatter for Craftland Studio FC source files.",
   "type": "module",
-  "description": "Deterministic formatter and structural linter for Craftland Studio .fcg/.fcc, written from scratch against the compiled ANTLR grammar.",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./cli": {
-      "types": "./dist/cli/cli.d.ts",
-      "import": "./dist/cli/cli.js"
-    },
-    "./package.json": "./package.json"
-  },
-  "files": ["dist"],
-  "bin": {
-    "fc-format-v2": "dist/cli/cli.js"
-  },
   "engines": {
-    "node": "^20.0.0 || ^22.0.0 || >=24.0.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
+    "bench": "tsx scripts/bench-format.ts",
+    "bridge": "tsx src/cli/bridge.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "tsx src/cli/cli.ts",
-    "fmt": "tsx src/cli/cli.ts fmt",
-    "check": "tsx src/cli/cli.ts check",
-    "lint": "tsx src/cli/cli.ts lint",
+    "grammar:generate": "node scripts/gen-token-vocabulary.mjs",
+    "grammar:check": "node scripts/gen-token-vocabulary.mjs --check",
+    "verify:grammar": "npm run grammar:check",
+    "verify:eos": "tsx scripts/verify-eos.ts",
     "oracle": "tsx src/cli/oracle.ts",
-    "grammar:gen": "node scripts/gen-grammar.mjs",
-    "grammar:check": "node scripts/gen-grammar.mjs --check"
+    "format": "tsx src/cli/format.ts",
+    "format:check": "tsx src/cli/format.ts --check",
+    "graphify": "tsx src/cli/graphify.ts",
+    "lint": "tsx src/cli/lint.ts",
+    "lint:json": "tsx src/cli/lint.ts --json",
+    "ci": "npm run typecheck && npm run test && npm run build"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "tsx": "^4.23.13",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.11"
+    "@types/node": "24.0.0",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
