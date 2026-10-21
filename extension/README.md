@@ -36,7 +36,7 @@
 1. Open VS Code.
 2. Go to **Extensions** (`Ctrl+Shift+X`).
 3. Click the **`...`** (Views and More Actions) menu in the top-right corner.
-4. Select **Install from VSIX...** and pick `fc-format-v5-vscode-1.0.1.vsix`.
+4. Select **Install from VSIX...** and pick `fc-format-v5-vscode-1.0.2.vsix`.
 
 ### 2. Configure Default Formatter
 Add the following to your VS Code `settings.json` (or configure via **Format Document With... &rarr; Configure Default Formatter**):

@@ -181,7 +181,7 @@ function myersMatches(a, b) {
 
       let y = x - k;
 
-      while (x < N && y < M && sameLine(a[x], b[y])) {
+      while (x < N && y < M && sameLineContent(a[x], b[y])) {
         x += 1;
         y += 1;
       }
@@ -255,7 +255,22 @@ function backtrackMyers(trace, a, b, d, k, offset) {
  */
 
 /**
+ * Test whether two lines have identical content, ignoring line ending differences.
+ * Used for range formatting and surgical line hunk computation.
+ *
+ * @param {SourceLine} left
+ * @param {SourceLine} right
+ * @returns {boolean}
+ */
+function sameLineContent(left, right) {
+  return left.text === right.text;
+}
+
+/**
  * Computes line-level replacement hunks between original and formatted source code.
+ *
+ * Line endings are matched flexibly to prevent whole-document hunk collapse
+ * when editor buffers and formatted outputs use different EOL conventions.
  *
  * @param {string} before - Original source text.
  * @param {string} after - Formatted source text.
@@ -268,19 +283,20 @@ export function computeLineHunks(before, after) {
 
   const oldLines = linesOf(before);
   const newLines = linesOf(after);
+  const targetEnding = before.includes("\r\n") ? "\r\n" : "\n";
   let prefix = 0;
 
-  // 1. Common prefix trimming
-  while (prefix < oldLines.length && prefix < newLines.length && sameLine(oldLines[prefix], newLines[prefix])) {
+  // 1. Common prefix trimming (content-based)
+  while (prefix < oldLines.length && prefix < newLines.length && sameLineContent(oldLines[prefix], newLines[prefix])) {
     prefix += 1;
   }
 
-  // 2. Common suffix trimming
+  // 2. Common suffix trimming (content-based)
   let suffix = 0;
   while (
     suffix < oldLines.length - prefix &&
     suffix < newLines.length - prefix &&
-    sameLine(oldLines[oldLines.length - suffix - 1], newLines[newLines.length - suffix - 1])
+    sameLineContent(oldLines[oldLines.length - suffix - 1], newLines[newLines.length - suffix - 1])
   ) {
     suffix += 1;
   }
@@ -308,7 +324,7 @@ export function computeLineHunks(before, after) {
         oldLineCount: sliceOld.length,
         newStartLine: prefix + lastNew,
         newLineCount: sliceNew.length,
-        newText: sliceNew.map((item) => item.text + item.ending).join(""),
+        newText: sliceNew.map((item) => item.text + (item.ending ? targetEnding : "")).join(""),
         oldText: sliceOld.map((item) => item.text + item.ending).join(""),
       });
     }
@@ -327,7 +343,7 @@ export function computeLineHunks(before, after) {
       oldLineCount: sliceOld.length,
       newStartLine: prefix + lastNew,
       newLineCount: sliceNew.length,
-      newText: sliceNew.map((item) => item.text + item.ending).join(""),
+      newText: sliceNew.map((item) => item.text + (item.ending ? targetEnding : "")).join(""),
       oldText: sliceOld.map((item) => item.text + item.ending).join(""),
     });
   }

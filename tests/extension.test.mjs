@@ -249,7 +249,7 @@ test("extension build copies runtime, schema and user docs without the developme
   const target = join(directory, "dist");
   const files = copyExtensionRuntime(target);
 
-  assert.equal(files.length, 23);
+  assert.equal(files.length, 31);
   assert.equal(fs.existsSync(join(target, "core", "diff.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "cache.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "layout", "collection-alignment.mjs")), true);
@@ -307,7 +307,7 @@ test("editor provider and CLI use identical config and output for unsaved text",
     assert.deepEqual(JSON.parse(explained.stdout).provenance, resolveConfig(file).provenance);
     assert.equal(fs.readFileSync(file, "utf8"), "older disk contents");
     assert.equal(editor.state.selector.some((item) => item.language === "ffugclanguage"), true);
-    assert.equal(extensionPackage.contributes.commands.length, 3);
+    assert.equal(extensionPackage.contributes.commands.length, 4);
   } finally {
     editor.dispose();
   }
@@ -812,6 +812,115 @@ test("editor automatically converts EOL without error when buffer EOL differs fr
     // Text edits applied + EndOfLine converted
     assert.ok(edits.length > 0);
     assert.ok(edits.some((e) => e.newEol === 1)); // 1 = LF in VS Code EndOfLine enum
+  } finally {
+    editor.dispose();
+  }
+}));
+
+test("range formatting CRLF document isolates edits to selected lines and preserves CRLF", () => fixture(async (directory) => {
+  const filePath = join(directory, "RangeCrlf.fcg");
+  const source = [
+    'import "StdLibrary.fcc" as StdLibrary',
+    '',
+    'graph WeatherModule {',
+    '  WEATHER_EFFECT Map<WeatherType, EResPrefab> = Map<WeatherType, EResPrefab>{',
+    '    WeatherType.Snowy: EResPrefab.SnowEffect,',
+    '    WeatherType.Rainy: EResPrefab.RainEffect,',
+    '    WeatherType.Windy: EResPrefab.WindyEffect,',
+    '    WeatherType.HeavyRain: EResPrefab.RainEffect,',
+    '  }',
+    '  WEATHER_POSITION Map<WeatherType, Vector3> = Map<WeatherType, Vector3>{',
+    '    WeatherType.Snowy: Vector3 {0, 20, 0},',
+    '    WeatherType.Rainy: Vector3 {0, 20, 0},',
+    '    WeatherType.Windy: Vector3 {0, 0, -2},',
+    '    WeatherType.HeavyRain: Vector3 {0, 20, 0},',
+    '  }',
+    '}',
+    '',
+  ].join("\r\n");
+  fs.writeFileSync(filePath, source);
+
+  const document = documentAt(filePath, source);
+  document.eol = 2; // CRLF
+  const editor = fakeVscode(document);
+
+  try {
+    // Select only lines 4 to 7 (the first map entries)
+    const range = new editor.vscode.Range(
+      new editor.vscode.Position(4, 0),
+      new editor.vscode.Position(7, 30),
+    );
+
+    const edits = editor.state.rangeFormattingProvider.provideDocumentRangeFormattingEdits(document, range);
+    assert.ok(edits.length > 0);
+
+    // Edits must NOT replace the whole file (start line must not be 0)
+    for (const edit of edits) {
+      assert.ok(edit.range.start.line >= 3);
+      assert.ok(edit.range.end.line <= 9);
+      // Replacement must use CRLF
+      assert.ok(!/[^\r]\n/.test(edit.newText));
+    }
+
+    const formatted = applyEdits(source, edits, document);
+    // Lines 4-7 are aligned
+    assert.match(formatted, /WeatherType\.Snowy\s+: EResPrefab\.SnowEffect/);
+    // WEATHER_POSITION (lines 9-14) must remain untouched
+    assert.match(formatted, /WeatherType\.Snowy: Vector3 \{0, 20, 0\}/);
+    // Preserves CRLF
+    assert.ok(formatted.includes("\r\n"));
+    assert.ok(!/[^\r]\n/.test(formatted));
+  } finally {
+    editor.dispose();
+  }
+}));
+
+test("document formatting preserves document.eol dynamically without issuing setEndOfLine", () => fixture(async (directory) => {
+  const filePath = join(directory, "DynamicEol.fcg");
+  const crlfSource = 'import "StdLibrary.fcc" as StdLibrary\r\n\r\ngraph Test {\r\nfunc Foo() {\r\nvar x = 1\r\n}\r\n}\r\n';
+  fs.writeFileSync(filePath, crlfSource);
+
+  const document = documentAt(filePath, crlfSource);
+  document.eol = 2; // CRLF
+  const editor = fakeVscode(document);
+
+  try {
+    // 1. When document.eol is CRLF, format produces CRLF and issues NO setEndOfLine edit
+    const crlfEdits = editor.state.formattingProvider.provideDocumentFormattingEdits(document);
+    assert.ok(crlfEdits.every(e => e.newEol === undefined));
+    const crlfResult = applyEdits(crlfSource, crlfEdits, document);
+    assert.ok(crlfResult.includes("\r\n"));
+    assert.ok(!/[^\r]\n/.test(crlfResult));
+
+    // 2. When user switches document to LF (document.eol = 1)
+    const lfSource = crlfSource.replace(/\r\n/g, "\n");
+    document.text = lfSource;
+    document.eol = 1; // LF
+
+    const lfEdits = editor.state.formattingProvider.provideDocumentFormattingEdits(document);
+    assert.ok(lfEdits.every(e => e.newEol === undefined));
+    const lfResult = applyEdits(lfSource, lfEdits, document);
+    assert.ok(!lfResult.includes("\r\n"));
+    assert.ok(lfResult.includes("\n"));
+  } finally {
+    editor.dispose();
+  }
+}));
+
+test("static linter is disabled by default and produces no diagnostic warnings", () => fixture(async (directory) => {
+  const filePath = join(directory, "LintDefault.fcg");
+  // Source contains an empty block and unreachable code
+  const source = 'import "StdLibrary.fcc" as StdLibrary\n\ngraph LintTest {\nfunc Foo() {\nreturn\nvar x = 1\n}\n}\n';
+  fs.writeFileSync(filePath, source);
+
+  const document = documentAt(filePath, source);
+  const editor = fakeVscode(document);
+
+  try {
+    editor.instance.refreshDiagnostics(document);
+    // Since linter.enabled is false by default, no warnings are published
+    const docDiags = editor.state.diagnostics.get(document.uri.toString()) ?? [];
+    assert.equal(docDiags.length, 0);
   } finally {
     editor.dispose();
   }

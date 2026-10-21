@@ -2,11 +2,11 @@
 
 FC Formatter v5 formats Craftland `.fcg` and `.fcc` files with a lossless
 syntax tree and document printer. The CLI and VS Code extension share the same
-core, project configuration, diagnostics and output. Current release: **1.0.1**.
+core, project configuration, diagnostics and output. Current release: **1.0.2**.
 
 ## Install the VS Code extension
 
-1. Install `extension/fc-format-v5-vscode-1.0.1.vsix` through
+1. Install `extension/fc-format-v5-vscode-1.0.2.vsix` through
    **Extensions → ⋯ → Install from VSIX** in VS Code.
 2. Open an FC file and use **Format Document With… → Configure Default
    Formatter → FC Format v5**. Craftland's language extension provides syntax

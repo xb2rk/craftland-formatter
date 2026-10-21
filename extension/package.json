@@ -2,7 +2,7 @@
   "name": "fc-format-v5-vscode",
   "displayName": "Free Fire Craftland Code Formatter",
   "description": "Official-grade code formatter, static linter, and range-formatting engine for Free Fire Craftland (.fcg, .fcc).",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "craftland-community",
   "icon": "resources/icon.png",
   "galleryBanner": {
@@ -49,6 +49,7 @@
     ],
     "commands": [
       { "command": "fcfmt.formatDocument", "title": "FC Format v5: Format Document" },
+      { "command": "fcfmt.formatSelection", "title": "FC Format v5: Format Selection" },
       { "command": "fcfmt.preview", "title": "FC Format v5: Preview Formatting" },
       { "command": "fcfmt.explainConfig", "title": "FC Format v5: Explain Configuration" }
     ],
@@ -173,6 +174,11 @@
           "enum": ["preserve", "always", "never"],
           "default": "preserve",
           "description": "Blank lines between graph or declaration members."
+        },
+        "fc-format.linter.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable static code linting for Free Fire Craftland Code (unreachable code, step-0 loops, self-comparisons)."
         }
       }
     }

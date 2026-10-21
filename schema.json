@@ -69,7 +69,7 @@
     },
     "endOfLine": {
       "description": "Line ending for generated layout.",
-      "default": "lf",
+      "default": "preserve",
       "examples": [
         "crlf"
       ],
@@ -371,7 +371,7 @@
               },
               "endOfLine": {
                 "description": "Line ending for generated layout.",
-                "default": "lf",
+                "default": "preserve",
                 "examples": [
                   "crlf"
                 ],

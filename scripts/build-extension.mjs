@@ -26,6 +26,14 @@ const CORE_FILES = Object.freeze([
   "syntax/operators.mjs",
   "syntax/lexer.mjs",
   "syntax/lexicon.generated.mjs",
+  "lint/engine.mjs",
+  "lint/rules/index.mjs",
+  "lint/rules/no-assignment-in-condition.mjs",
+  "lint/rules/no-empty-block.mjs",
+  "lint/rules/no-self-compare.mjs",
+  "lint/rules/no-unreachable-code.mjs",
+  "lint/rules/no-unused-imports.mjs",
+  "lint/rules/no-zero-step-for-loop.mjs",
 ]);
 const USER_FILES = Object.freeze([
   ["schema.json", "fcfmt.schema.json"],

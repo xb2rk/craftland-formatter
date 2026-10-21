@@ -101,8 +101,14 @@ function resolveStyle(source, requested) {
     throw new TypeError("Invalid blankLines option");
   }
 
-  const eol = style.endOfLine === "crlf" ? "\r\n" :
-    style.endOfLine === "preserve" ? source.match(/\r\n|\r|\n/)?.[0] ?? "\n" : "\n";
+  let eol = "\n";
+  if (style.endOfLine === "crlf") {
+    eol = "\r\n";
+  } else if (style.endOfLine === "preserve") {
+    const crlfCount = (source.match(/\r\n/g) ?? []).length;
+    const lfCount = (source.match(/[^\r]\n/g) ?? []).length + (source.startsWith("\n") ? 1 : 0);
+    eol = crlfCount > lfCount ? "\r\n" : "\n";
+  }
   return { ...style, eol };
 }
 

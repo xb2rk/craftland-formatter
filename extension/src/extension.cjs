@@ -240,7 +240,12 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
     const start = Math.max(0, Math.min(issue.start ?? 0, length));
     const end = Math.max(start, Math.min(issue.end ?? start + 1, length));
     const range = new vscode.Range(document.positionAt(start), document.positionAt(end));
-    const diagnostic = new vscode.Diagnostic(range, issue.message, vscode.DiagnosticSeverity.Error);
+    const severity = issue.severity === "warning"
+      ? (vscode.DiagnosticSeverity?.Warning ?? 1)
+      : issue.severity === "information"
+      ? (vscode.DiagnosticSeverity?.Information ?? 2)
+      : (vscode.DiagnosticSeverity?.Error ?? 0);
+    const diagnostic = new vscode.Diagnostic(range, issue.message, severity);
     diagnostic.source = "FC Format v5";
     diagnostic.code = issue.code ?? "config-error";
     return diagnostic;
@@ -265,7 +270,20 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
       }
 
       const kind = extname(document.uri.fsPath).slice(1).toLowerCase();
-      publish(document, core.parseSource(document.getText(), kind).diagnostics);
+      const parseResult = core.parseSource(document.getText(), kind);
+      const allIssues = [...parseResult.diagnostics];
+
+      const vsConfig = vscode?.workspace?.getConfiguration ? vscode.workspace.getConfiguration("fc-format", document.uri) : null;
+      const linterEnabled = vsConfig?.get("linter.enabled") === true;
+
+      if (linterEnabled && core.lintSource) {
+        const lintResult = core.lintSource(document.getText(), {}, document.uri.fsPath);
+        if (lintResult?.diagnostics) {
+          allIssues.push(...lintResult.diagnostics);
+        }
+      }
+
+      publish(document, allIssues);
     } catch (error) {
       publish(document, [{ code: "config-error", message: String(error.message ?? error), start: 0 }]);
     }
@@ -316,8 +334,13 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
 
     try {
       const config = getResolvedConfig(document.uri.fsPath, document, formattingOptions);
+      const activeEol = document.eol === (vscode.EndOfLine?.CRLF ?? 2) ? "crlf" : "lf";
+      const effectiveConfig = config.endOfLine === "preserve"
+        ? { ...config, endOfLine: activeEol }
+        : config;
+
       const result = core.formatConfiguredSource(document.getText(), document.uri.fsPath, {
-        resolvedConfig: config,
+        resolvedConfig: effectiveConfig,
       });
 
       if (result.ignored) {
@@ -353,8 +376,13 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
 
     try {
       const config = getResolvedConfig(document.uri.fsPath, document, formattingOptions);
+      const activeEol = document.eol === (vscode.EndOfLine?.CRLF ?? 2) ? "crlf" : "lf";
+      const effectiveConfig = config.endOfLine === "preserve"
+        ? { ...config, endOfLine: activeEol }
+        : config;
+
       const result = core.formatConfiguredSource(document.getText(), document.uri.fsPath, {
-        resolvedConfig: config,
+        resolvedConfig: effectiveConfig,
       });
 
       if (result.ignored) {
@@ -483,6 +511,48 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
     }
   }
 
+  async function formatSelectionCommand() {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !isFcDocument(editor.document)) {
+      void vscode.window.showInformationMessage("Open a .fcg or .fcc file with an active selection first.");
+      return;
+    }
+
+    const document = editor.document;
+    const selection = editor.selection;
+
+    if (!selection || selection.isEmpty) {
+      await formatCommand();
+      return;
+    }
+
+    const formattingOptions = editor?.options ? {
+      tabSize: typeof editor.options.tabSize === "number" ? editor.options.tabSize : 2,
+      insertSpaces: typeof editor.options.insertSpaces === "boolean" ? editor.options.insertSpaces : true,
+    } : null;
+
+    const prepared = prepareRangeFormat(document, selection, formattingOptions);
+
+    if (prepared.error) {
+      void vscode.window.showErrorMessage("FC Format v5: " + prepared.error);
+      return;
+    }
+
+    if (prepared.edits.length === 0) {
+      return;
+    }
+
+    const applied = await editor.edit((builder) => {
+      for (const edit of prepared.edits) {
+        builder.replace(edit.range, edit.newText);
+      }
+    });
+
+    if (!applied) {
+      void vscode.window.showErrorMessage("FC Format v5: VS Code could not apply range formatting edits.");
+    }
+  }
+
   const selector = [
     { scheme: "file", language: "ffugclanguage" },
     { scheme: "file", pattern: "**/*.fcg" },
@@ -520,6 +590,7 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
     vscode.commands.registerCommand("fcfmt.preview", preview),
     vscode.commands.registerCommand("fcfmt.explainConfig", explainConfig),
     vscode.commands.registerCommand("fcfmt.formatDocument", formatCommand),
+    vscode.commands.registerCommand("fcfmt.formatSelection", formatSelectionCommand),
     vscode.workspace.onDidOpenTextDocument(scheduleDiagnostics),
     vscode.workspace.onDidChangeTextDocument((event) => scheduleDiagnostics(event.document)),
     vscode.workspace.onDidCloseTextDocument((document) => {
@@ -568,11 +639,12 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
 
 async function activate(context) {
   const vscode = require("vscode");
-  const [service, config, syntax, diff] = await Promise.all([
+  const [service, config, syntax, diff, lint] = await Promise.all([
     import("./core/service.mjs"),
     import("./core/config.mjs"),
     import("./core/syntax/parser.mjs"),
     import("./core/diff.mjs"),
+    import("./core/lint/engine.mjs"),
   ]);
 
   createExtension(vscode, {
@@ -580,6 +652,7 @@ async function activate(context) {
     resolveConfig: config.resolveConfig,
     parseSource: syntax.parseSource,
     computeLineHunks: diff.computeLineHunks,
+    lintSource: lint.lintSource,
   }, context);
 }
 

@@ -8,7 +8,7 @@ export const OPTIONS = Object.freeze([
   { path: "indent.size", type: "integer", minimum: 1, default: 2, cli: "--indent-size", description: "Spaces per indent level when indent.style is space.", example: 4 },
   { path: "indent.continuation", type: "integer", minimum: 0, maximum: 4, default: 1, cli: "--indent-continuation", description: "Extra indent levels for broken binary-expression tails.", example: 2 },
   { path: "alignment.collections", type: "boolean", default: true, cli: "--align-collections", description: "Align map colons and struct equals signs in broken collections.", example: false },
-  { path: "endOfLine", type: "enum", values: ["lf", "crlf", "preserve"], default: "lf", cli: "--end-of-line", description: "Line ending for generated layout.", example: "crlf" },
+  { path: "endOfLine", type: "enum", values: ["lf", "crlf", "preserve"], default: "preserve", cli: "--end-of-line", description: "Line ending for generated layout.", example: "crlf" },
   { path: "finalNewline", type: "boolean", default: true, cli: "--final-newline", description: "Append a final line ending when missing.", example: false },
   { path: "lineBreaks", type: "enum", values: ["canonical", "preserve"], default: "canonical", cli: "--line-breaks", description: "Reflow safe groups or retain existing breaks.", example: "preserve" },
   { path: "wrap.calls", type: "enum", values: ["auto", "always", "never"], default: "auto", cli: "--wrap-calls", description: "Wrapping of call arguments.", example: "always" },

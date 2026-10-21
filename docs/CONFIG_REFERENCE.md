@@ -13,7 +13,7 @@ Precedence for each option: explicit CLI flag > last matching `overrides` entry 
 | `indent.size` | `2` | `4` | `--indent-size` | Spaces per indent level when indent.style is space. |
 | `indent.continuation` | `1` | `2` | `--indent-continuation` | Extra indent levels for broken binary-expression tails. |
 | `alignment.collections` | `true` | `false` | `--align-collections` | Align map colons and struct equals signs in broken collections. |
-| `endOfLine` | `"lf"` | `"crlf"` | `--end-of-line` | Line ending for generated layout. |
+| `endOfLine` | `"preserve"` | `"crlf"` | `--end-of-line` | Line ending for generated layout. |
 | `finalNewline` | `true` | `false` | `--final-newline` | Append a final line ending when missing. |
 | `lineBreaks` | `"canonical"` | `"preserve"` | `--line-breaks` | Reflow safe groups or retain existing breaks. |
 | `wrap.calls` | `"auto"` | `"always"` | `--wrap-calls` | Wrapping of call arguments. |
