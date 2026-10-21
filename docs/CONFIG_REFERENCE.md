@@ -13,6 +13,8 @@ Precedence for each option: explicit CLI flag > last matching `overrides` entry 
 | `indent.size` | `2` | `4` | `--indent-size` | Spaces per indent level when indent.style is space. |
 | `indent.continuation` | `1` | `2` | `--indent-continuation` | Extra indent levels for broken binary-expression tails. |
 | `alignment.collections` | `true` | `false` | `--align-collections` | Align map colons and struct equals signs in broken collections. |
+| `alignment.enums` | `true` | `false` | `--align-enums` | Align equals signs and trailing comments in enum declarations. |
+| `alignment.fields` | `true` | `false` | `--align-fields` | Align names, types, and equals signs in tuple, component, and graph field declarations. |
 | `endOfLine` | `"preserve"` | `"crlf"` | `--end-of-line` | Line ending for generated layout. |
 | `finalNewline` | `true` | `false` | `--final-newline` | Append a final line ending when missing. |
 | `lineBreaks` | `"canonical"` | `"preserve"` | `--line-breaks` | Reflow safe groups or retain existing breaks. |
@@ -24,10 +26,12 @@ Precedence for each option: explicit CLI flag > last matching `overrides` entry 
 | `spacing.assignment` | `"inherit"` | `"compact"` | `--spacing-assignment` | Spaces around = and :=; inherit follows spacing.operators. |
 | `spacing.comma` | `"spaced"` | `"compact"` | `--spacing-comma` | Space after commas in flat groups. |
 | `spacing.brackets` | `"tight"` | `"spaced"` | `--spacing-brackets` | Padding inside flat collections. |
-| `imports.sort` | `false` | `true` | `--sort-imports` | Sort complete imports with attached comments into standard, Contracts and project groups. |
+| `imports.sort` | `true` | `false` | `--sort-imports` | Sort complete imports with attached comments into standard, Contracts and project groups. |
 | `blankLines.maxConsecutive` | `1` | `0` | `--blank-lines-max` | Maximum source blank lines kept between entries. |
 | `blankLines.afterImports` | `"always"` | `"preserve"` | `--blank-lines-after-imports` | Blank line after the last import. |
 | `blankLines.betweenMembers` | `"preserve"` | `"always"` | `--blank-lines-between-members` | Blank lines between graph or declaration members. |
+| `blankLines.betweenFunctions` | `"preserve"` | `"always"` | `--blank-lines-between-functions` | Enforce a blank line between function and event members in graphs. |
+| `syntax.canonicalHeaders` | `"preserve"` | `"canonical"` | `--canonical-headers` | Keep or strip redundant parentheses around if/for/while condition headers. |
 
 ```json
 {

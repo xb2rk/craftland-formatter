@@ -8,6 +8,8 @@ export const OPTIONS = Object.freeze([
   { path: "indent.size", type: "integer", minimum: 1, default: 2, cli: "--indent-size", description: "Spaces per indent level when indent.style is space.", example: 4 },
   { path: "indent.continuation", type: "integer", minimum: 0, maximum: 4, default: 1, cli: "--indent-continuation", description: "Extra indent levels for broken binary-expression tails.", example: 2 },
   { path: "alignment.collections", type: "boolean", default: true, cli: "--align-collections", description: "Align map colons and struct equals signs in broken collections.", example: false },
+  { path: "alignment.enums", type: "boolean", default: true, cli: "--align-enums", description: "Align equals signs and trailing comments in enum declarations.", example: false },
+  { path: "alignment.fields", type: "boolean", default: true, cli: "--align-fields", description: "Align names, types, and equals signs in tuple, component, and graph field declarations.", example: false },
   { path: "endOfLine", type: "enum", values: ["lf", "crlf", "preserve"], default: "preserve", cli: "--end-of-line", description: "Line ending for generated layout.", example: "crlf" },
   { path: "finalNewline", type: "boolean", default: true, cli: "--final-newline", description: "Append a final line ending when missing.", example: false },
   { path: "lineBreaks", type: "enum", values: ["canonical", "preserve"], default: "canonical", cli: "--line-breaks", description: "Reflow safe groups or retain existing breaks.", example: "preserve" },
@@ -19,10 +21,12 @@ export const OPTIONS = Object.freeze([
   { path: "spacing.assignment", type: "enum", values: ["inherit", "spaced", "compact"], default: "inherit", cli: "--spacing-assignment", description: "Spaces around = and :=; inherit follows spacing.operators.", example: "compact" },
   { path: "spacing.comma", type: "enum", values: ["spaced", "compact"], default: "spaced", cli: "--spacing-comma", description: "Space after commas in flat groups.", example: "compact" },
   { path: "spacing.brackets", type: "enum", values: ["tight", "spaced"], default: "tight", cli: "--spacing-brackets", description: "Padding inside flat collections.", example: "spaced" },
-  { path: "imports.sort", type: "boolean", default: false, cli: "--sort-imports", description: "Sort complete imports with attached comments into standard, Contracts and project groups.", example: true },
+  { path: "imports.sort", type: "boolean", default: true, cli: "--sort-imports", description: "Sort complete imports with attached comments into standard, Contracts and project groups.", example: false },
   { path: "blankLines.maxConsecutive", type: "integer", minimum: 0, maximum: 2, default: 1, cli: "--blank-lines-max", description: "Maximum source blank lines kept between entries.", example: 0 },
   { path: "blankLines.afterImports", type: "enum", values: ["always", "preserve", "never"], default: "always", cli: "--blank-lines-after-imports", description: "Blank line after the last import.", example: "preserve" },
   { path: "blankLines.betweenMembers", type: "enum", values: ["preserve", "always", "never"], default: "preserve", cli: "--blank-lines-between-members", description: "Blank lines between graph or declaration members.", example: "always" },
+  { path: "blankLines.betweenFunctions", type: "enum", values: ["always", "preserve", "never"], default: "preserve", cli: "--blank-lines-between-functions", description: "Enforce a blank line between function and event members in graphs.", example: "always" },
+  { path: "syntax.canonicalHeaders", type: "enum", values: ["preserve", "canonical"], default: "preserve", cli: "--canonical-headers", description: "Keep or strip redundant parentheses around if/for/while condition headers.", example: "canonical" },
 ]);
 
 const byPath = new Map(OPTIONS.map((option) => [option.path, option]));
@@ -124,7 +128,11 @@ export function printerOptions(leaves) {
     printWidth: leaves.printWidth,
     indentUnit: leaves["indent.style"] === "tab" ? "\t" : " ".repeat(leaves["indent.size"]),
     continuationIndent: leaves["indent.continuation"],
-    alignment: { collections: leaves["alignment.collections"] },
+    alignment: {
+      collections: leaves["alignment.collections"],
+      enums: leaves["alignment.enums"],
+      fields: leaves["alignment.fields"],
+    },
     imports: { sort: leaves["imports.sort"] },
     endOfLine: leaves.endOfLine,
     finalNewline: leaves.finalNewline,
@@ -145,6 +153,10 @@ export function printerOptions(leaves) {
       maxConsecutive: leaves["blankLines.maxConsecutive"],
       afterImports: leaves["blankLines.afterImports"],
       betweenMembers: leaves["blankLines.betweenMembers"],
+      betweenFunctions: leaves["blankLines.betweenFunctions"],
+    },
+    syntax: {
+      canonicalHeaders: leaves["syntax.canonicalHeaders"],
     },
   };
 }

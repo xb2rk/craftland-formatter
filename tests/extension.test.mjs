@@ -12,6 +12,7 @@ import { resolveConfig } from "../src/config.mjs";
 import { computeLineHunks } from "../src/diff.mjs";
 import { formatConfiguredSource } from "../src/service.mjs";
 import { parseSource } from "../src/syntax/parser.mjs";
+import { organizeImports } from "../src/imports.mjs";
 
 const require = createRequire(import.meta.url);
 const { createExtension, editorEdits, minimalEdit, rangeEdits } = require("../extension/src/extension.cjs");
@@ -135,6 +136,9 @@ function fakeVscode(document, customCore = null) {
     },
     DiagnosticSeverity: { Error: 0 },
     EndOfLine: { LF: 1, CRLF: 2 },
+    CodeActionKind: { SourceOrganizeImports: "source.organizeImports" },
+    CodeAction: class { constructor(title, kind) { this.title = title; this.kind = kind; } },
+    WorkspaceEdit: class { constructor() { this.edits = []; } replace(uri, range, newText) { this.edits.push({ uri, range, newText }); } },
     TextEdit: {
       replace(range, newText) { return { range, newText }; },
       setEndOfLine(newEol) { return { newEol }; },
@@ -163,6 +167,11 @@ function fakeVscode(document, customCore = null) {
       registerDocumentRangeFormattingEditProvider(selector, provider) {
         state.rangeSelector = selector;
         state.rangeFormattingProvider = provider;
+        return disposable();
+      },
+      registerCodeActionsProvider(selector, provider) {
+        state.codeActionSelector = selector;
+        state.codeActionProvider = provider;
         return disposable();
       },
     },
@@ -230,7 +239,7 @@ function fakeVscode(document, customCore = null) {
     },
   };
   const context = { subscriptions: [] };
-  const core = customCore ?? { formatConfiguredSource, resolveConfig, parseSource, computeLineHunks };
+  const core = customCore ?? { formatConfiguredSource, resolveConfig, parseSource, computeLineHunks, organizeImports };
   const instance = createExtension(vscode, core, context, { diagnosticDelayMs: 10 });
 
   return {
@@ -249,10 +258,11 @@ test("extension build copies runtime, schema and user docs without the developme
   const target = join(directory, "dist");
   const files = copyExtensionRuntime(target);
 
-  assert.equal(files.length, 31);
+  assert.equal(files.length, 32);
   assert.equal(fs.existsSync(join(target, "core", "diff.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "cache.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "layout", "collection-alignment.mjs")), true);
+  assert.equal(fs.existsSync(join(target, "core", "layout", "declaration-alignment.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "layout", "logical-chain.mjs")), true);
   assert.equal(fs.readFileSync(join(target, "fcfmt.schema.json"), "utf8"),
     fs.readFileSync(new URL("../schema.json", import.meta.url), "utf8"));
@@ -307,7 +317,7 @@ test("editor provider and CLI use identical config and output for unsaved text",
     assert.deepEqual(JSON.parse(explained.stdout).provenance, resolveConfig(file).provenance);
     assert.equal(fs.readFileSync(file, "utf8"), "older disk contents");
     assert.equal(editor.state.selector.some((item) => item.language === "ffugclanguage"), true);
-    assert.equal(extensionPackage.contributes.commands.length, 4);
+    assert.equal(extensionPackage.contributes.commands.length, 5);
   } finally {
     editor.dispose();
   }
@@ -921,6 +931,48 @@ test("static linter is disabled by default and produces no diagnostic warnings",
     // Since linter.enabled is false by default, no warnings are published
     const docDiags = editor.state.diagnostics.get(document.uri.toString()) ?? [];
     assert.equal(docDiags.length, 0);
+  } finally {
+    editor.dispose();
+  }
+}));
+
+test("organize imports command reorganizes imports and preserves unformatted code body", () => fixture(async (directory) => {
+  const filePath = join(directory, "OrganizeImportsTest.fcg");
+  const source = [
+    'import Z as Zed from "./Z.fcg"',
+    'import "EditorGenLib.fcc" as EditorGen',
+    'import "StdLibrary.fcc" as StdLibrary',
+    'import A from "./A.fcg"',
+    '',
+    'graph Demo {',
+    '// intentionally unformatted body',
+    'func Unformatted(  a   int,b bool   )   {',
+    'var x=1+2',
+    '}',
+    '}',
+    '',
+  ].join("\n");
+  fs.writeFileSync(filePath, source);
+
+  const document = documentAt(filePath, source);
+  const editor = fakeVscode(document);
+
+  try {
+    const organizeCommand = editor.state.commands.get("fcfmt.organizeImports");
+    assert.ok(typeof organizeCommand === "function");
+
+    await organizeCommand();
+
+    // Verify imports are organized into canonical order
+    assert.ok(document.text.startsWith('import "StdLibrary.fcc" as StdLibrary\nimport "EditorGenLib.fcc" as EditorGen\n\nimport A from "./A.fcg"\nimport Z as Zed from "./Z.fcg"'));
+    // Verify unformatted body is completely untouched
+    assert.ok(document.text.includes('func Unformatted(  a   int,b bool   )   {'));
+    assert.ok(document.text.includes('var x=1+2'));
+
+    // Also test code action provider
+    const codeActionContext = { only: { contains: (kind) => kind === "source.organizeImports" } };
+    const actions = editor.state.codeActionProvider.provideCodeActions(document, null, codeActionContext);
+    assert.equal(actions.length, 0); // Already organized, 0 edits
   } finally {
     editor.dispose();
   }

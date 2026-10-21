@@ -20,6 +20,7 @@ const CORE_FILES = Object.freeze([
   "imports.mjs",
   "pragmas.mjs",
   "layout/collection-alignment.mjs",
+  "layout/declaration-alignment.mjs",
   "layout/logical-chain.mjs",
   "syntax/parser.mjs",
   "syntax/types.mjs",

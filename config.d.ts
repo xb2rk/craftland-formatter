@@ -11,6 +11,8 @@ export interface FormatterSettings {
   };
   alignment?: {
     collections?: boolean;
+    enums?: boolean;
+    fields?: boolean;
   };
   wrap?: {
     calls?: "auto" | "always" | "never";
@@ -31,6 +33,10 @@ export interface FormatterSettings {
     maxConsecutive?: number;
     afterImports?: "always" | "preserve" | "never";
     betweenMembers?: "preserve" | "always" | "never";
+    betweenFunctions?: "always" | "preserve" | "never";
+  };
+  syntax?: {
+    canonicalHeaders?: "preserve" | "canonical";
   };
 }
 export type ConfigFile = FormatterSettings & {

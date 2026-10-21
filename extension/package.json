@@ -2,7 +2,7 @@
   "name": "fc-format-v5-vscode",
   "displayName": "Free Fire Craftland Code Formatter",
   "description": "Official-grade code formatter, static linter, and range-formatting engine for Free Fire Craftland (.fcg, .fcc).",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "publisher": "craftland-community",
   "icon": "resources/icon.png",
   "galleryBanner": {
@@ -50,8 +50,16 @@
     "commands": [
       { "command": "fcfmt.formatDocument", "title": "FC Format v5: Format Document" },
       { "command": "fcfmt.formatSelection", "title": "FC Format v5: Format Selection" },
+      { "command": "fcfmt.organizeImports", "title": "FC Format v5: Organize Imports" },
       { "command": "fcfmt.preview", "title": "FC Format v5: Preview Formatting" },
       { "command": "fcfmt.explainConfig", "title": "FC Format v5: Explain Configuration" }
+    ],
+    "keybindings": [
+      {
+        "command": "fcfmt.organizeImports",
+        "key": "shift+alt+o",
+        "when": "editorTextFocus && (editorLangId == 'ffugclanguage' || resourceExtname == '.fcg' || resourceExtname == '.fcc')"
+      }
     ],
     "configuration": {
       "title": "FC Format v5",
@@ -85,6 +93,16 @@
           "type": "boolean",
           "default": true,
           "description": "Align map colons and struct equals signs in broken collections."
+        },
+        "fc-format.alignment.enums": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align equals signs and trailing comments in enum declarations."
+        },
+        "fc-format.alignment.fields": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align names, types, and equals signs in tuple, component, and graph field declarations."
         },
         "fc-format.endOfLine": {
           "type": "string",
@@ -153,7 +171,7 @@
         },
         "fc-format.imports.sort": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Sort complete imports with attached comments into standard, Contracts and project groups."
         },
         "fc-format.blankLines.maxConsecutive": {
@@ -174,6 +192,18 @@
           "enum": ["preserve", "always", "never"],
           "default": "preserve",
           "description": "Blank lines between graph or declaration members."
+        },
+        "fc-format.blankLines.betweenFunctions": {
+          "type": "string",
+          "enum": ["always", "preserve", "never"],
+          "default": "preserve",
+          "description": "Enforce a blank line between function and event members in graphs."
+        },
+        "fc-format.syntax.canonicalHeaders": {
+          "type": "string",
+          "enum": ["preserve", "canonical"],
+          "default": "preserve",
+          "description": "Keep or strip redundant parentheses around if/for/while condition headers."
         },
         "fc-format.linter.enabled": {
           "type": "boolean",

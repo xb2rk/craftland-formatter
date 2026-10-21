@@ -253,6 +253,7 @@ class StructuralParser {
     }
 
     const block = this.parseBlock("GraphBlock", "member", "graph");
+    block.declarationKind = "graph";
     return { kind: "Graph", start, end: block.end, children: [...decorators, block] };
   }
 
@@ -287,6 +288,7 @@ class StructuralParser {
 
     if (this.at("{")) {
       const block = this.parseBlock("DeclarationBlock", "member", head.text);
+      block.declarationKind = head.text;
       children.push(block);
       return { kind: "Declaration", start, end: block.end, children };
     }
@@ -591,7 +593,7 @@ class StructuralParser {
     const trailingComma = beforeClose?.text === ",";
 
     if (closeOnOwnLine && !trailingComma && this.index - 1 > startIndex &&
-        ["BareCall", "ValueCall", "Parenthesized", "Index", "Collection", "Signature", "FunctionTypeSignature", "TypeArguments", "LocalizedString"].includes(kind)) {
+        ["Collection", "ValueCall", "Parenthesized", "Index", "Signature", "FunctionTypeSignature", "TypeArguments", "LocalizedString"].includes(kind)) {
       this.fail("isolated-close", kind + " closing delimiter needs the final item on the same line or a trailing comma.", close);
     }
 

@@ -55,7 +55,8 @@ test("import sorting groups paths and moves attached comments and aliases", () =
     '// contract', 'import Model from "../Contracts/Model.fcc"', '',
     'import Parent from "../../Parent.fcc"', 'import A from "./A.fcg"', '// last project',
     'import Z as Zed from "./Z.fcg"', '', 'graph Demo {}', ''].join('\n'));
-  assert.ok(check(source, {}).startsWith('// last project\nimport Z as Zed'));
+  assert.equal(check(source, {}), output);
+  assert.ok(check(source, { imports: { sort: false } }).startsWith('// last project\nimport Z as Zed'));
 });
 
 test("source ignores preserve a whole next entry and format surrounding entries", () => {

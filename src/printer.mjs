@@ -30,6 +30,7 @@ import { columns, render } from "./render.mjs";
 import { collectPragmas } from "./pragmas.mjs";
 import { organizeImports } from "./imports.mjs";
 import { alignCollectionEntries } from "./layout/collection-alignment.mjs";
+import { alignDeclarationEntries } from "./layout/declaration-alignment.mjs";
 import { determineLogicalMode, findExpressionBreaks } from "./layout/logical-chain.mjs";
 
 const printerDefaults = printerOptions(defaultLeaves());
@@ -40,6 +41,7 @@ const DEFAULT_STYLE = Object.freeze({
   imports: Object.freeze(printerDefaults.imports),
   spacing: Object.freeze(printerDefaults.spacing),
   blankLines: Object.freeze(printerDefaults.blankLines),
+  syntax: Object.freeze(printerDefaults.syntax),
 });
 const GROUP_NODES = new Set([
   "Signature", "FunctionTypeSignature", "BareCall", "ValueCall", "Parenthesized", "Index", "Collection", "TypeArguments", "LocalizedString", "Decorator",
@@ -57,6 +59,7 @@ function resolveStyle(source, requested) {
     imports: { ...DEFAULT_STYLE.imports, ...requested.imports },
     spacing: { ...DEFAULT_STYLE.spacing, ...requested.spacing },
     blankLines: { ...DEFAULT_STYLE.blankLines, ...requested.blankLines },
+    syntax: { ...DEFAULT_STYLE.syntax, ...requested.syntax },
   };
 
   if (!Number.isInteger(style.printWidth) || style.printWidth < 1) {
@@ -68,8 +71,9 @@ function resolveStyle(source, requested) {
   }
 
   if (!Number.isInteger(style.continuationIndent) || style.continuationIndent < 0 ||
-      style.continuationIndent > 4 || typeof style.alignment.collections !== "boolean") {
-    throw new TypeError("Invalid continuationIndent or alignment.collections option");
+      style.continuationIndent > 4 || typeof style.alignment.collections !== "boolean" ||
+      typeof style.alignment.enums !== "boolean" || typeof style.alignment.fields !== "boolean") {
+    throw new TypeError("Invalid continuationIndent or alignment options");
   }
 
   if (!["lf", "crlf", "preserve"].includes(style.endOfLine)) {
@@ -97,8 +101,13 @@ function resolveStyle(source, requested) {
   if (!Number.isInteger(style.blankLines.maxConsecutive) ||
       style.blankLines.maxConsecutive < 0 || style.blankLines.maxConsecutive > 2 ||
       !["always", "preserve", "never"].includes(style.blankLines.afterImports) ||
-      !["preserve", "always", "never"].includes(style.blankLines.betweenMembers)) {
+      !["preserve", "always", "never"].includes(style.blankLines.betweenMembers) ||
+      !["always", "preserve", "never"].includes(style.blankLines.betweenFunctions)) {
     throw new TypeError("Invalid blankLines option");
+  }
+
+  if (!["preserve", "canonical"].includes(style.syntax?.canonicalHeaders)) {
+    throw new TypeError("Invalid syntax.canonicalHeaders option");
   }
 
   let eol = "\n";
@@ -140,30 +149,43 @@ function nodePart(node) {
   return { type: "node", start: node.start, end: node.end, node, text: "" };
 }
 
-/** Omit only grammar-approved terminal commas from the token identity check. */
-function stableTokens(tree) {
+/** Omit only grammar-approved terminal commas and optional canonical header parens from the token identity check. */
+function stableTokens(tree, options = {}) {
   const syntax = tree.tokens.filter((token) => token.channel === "syntax");
-  const optionalCommas = new Set();
+  const optionalTokens = new Set();
   const pending = [tree];
 
   while (pending.length > 0) {
     const node = pending.pop();
     pending.push(...node.children);
 
-    if (node.kind !== "Collection" && node.kind !== "BareCall") {
-      continue;
+    if (node.kind === "Collection" || node.kind === "BareCall") {
+      const closeIndex = firstAtOrAfter(syntax, node.end) - 1;
+      const beforeClose = syntax[closeIndex - 1];
+
+      if (beforeClose?.text === "," && beforeClose.start >= node.start) {
+        optionalTokens.add(beforeClose.start);
+      }
     }
 
-    const closeIndex = firstAtOrAfter(syntax, node.end) - 1;
-    const beforeClose = syntax[closeIndex - 1];
-
-    if (beforeClose?.text === "," && beforeClose.start >= node.start) {
-      optionalCommas.add(beforeClose.start);
+    if (options.canonicalHeaders && node.kind === "Condition") {
+      const parenChild = node.children.find((c) => c.kind === "Parenthesized");
+      if (parenChild && node.children.length === 1) {
+        const parenSyntax = tree.tokens.filter(
+          (t) => t.channel === "syntax" && t.start >= parenChild.start && t.end <= parenChild.end
+        );
+        const open = parenSyntax[0];
+        const close = parenSyntax.at(-1);
+        if (open?.text === "(" && close?.text === ")") {
+          optionalTokens.add(open.start);
+          optionalTokens.add(close.start);
+        }
+      }
     }
   }
 
   return tree.tokens.filter((token) =>
-    (token.channel === "syntax" || COMMENTS.has(token.kind)) && !optionalCommas.has(token.start));
+    (token.channel === "syntax" || COMMENTS.has(token.kind)) && !optionalTokens.has(token.start));
 }
 
 class SyntaxPrinter {
@@ -229,6 +251,21 @@ class SyntaxPrinter {
 
     if (GROUP_NODES.has(node.kind)) {
       return this.printGroup(node);
+    }
+
+    if (node.kind === "Condition" && this.style.syntax?.canonicalHeaders === "canonical") {
+      const parenChild = node.children.find((c) => c.kind === "Parenthesized");
+      if (parenChild && node.children.length === 1) {
+        const parenSyntax = this.tokens.filter(
+          (t) => t.channel === "syntax" && t.start >= parenChild.start && t.end <= parenChild.end
+        );
+        const open = parenSyntax[0];
+        const close = parenSyntax.at(-1);
+        if (open?.text === "(" && close?.text === ")") {
+          const interior = this.parts(parenChild, open.end, close.start);
+          return group(this.printParts(interior, "Condition"), this.logicalMode(interior));
+        }
+      }
     }
 
     const parts = this.parts(node);
@@ -447,13 +484,25 @@ class SyntaxPrinter {
       return text("{}");
     }
 
-    return concat(text("{"), indent(concat(hardline, this.printEntries(entries, node.kind))), hardline, text("}"));
+    return concat(text("{"), indent(concat(hardline, this.printEntries(entries, node.kind, node.declarationKind))), hardline, text("}"));
   }
 
   /** Keep mandatory entry breaks separate from configurable blank boundaries. */
-  printEntries(entries, owner) {
+  printEntries(entries, owner, declarationKind) {
     const docs = [];
     let previous;
+
+    const alignedDeclarations = ["DeclarationBlock", "GraphBlock"].includes(owner)
+      ? alignDeclarationEntries({
+          entries,
+          owner,
+          declarationKind,
+          source: this.source,
+          getParts: (node) => this.parts(node),
+          printParts: (parts, own) => this.printParts(parts, own),
+          style: this.style,
+        })
+      : null;
 
     for (const entry of entries) {
       if (previous) {
@@ -468,9 +517,14 @@ class SyntaxPrinter {
           const sourceBlanks = Math.max(0, (gap.match(/\r\n|\r|\n/g) ?? []).length - 1);
           const importBoundary = owner === "File" && previous.node?.kind === "Import" &&
             entry.node && entry.node.kind !== "Import";
+          const isFuncBoundary = owner === "GraphBlock" && (
+            (previous.node && ["Function", "EventListener"].includes(previous.node.kind)) ||
+            (entry.node && ["Function", "EventListener"].includes(entry.node.kind))
+          );
           const memberBoundary = ["GraphBlock", "DeclarationBlock"].includes(owner) &&
             previous.node && entry.node;
           const policy = importBoundary ? this.style.blankLines.afterImports :
+            isFuncBoundary ? this.style.blankLines.betweenFunctions :
             memberBoundary ? this.style.blankLines.betweenMembers : "preserve";
           const requested = policy === "always" ? Math.max(1, sourceBlanks) :
             policy === "never" ? 0 : sourceBlanks;
@@ -482,7 +536,7 @@ class SyntaxPrinter {
         }
       }
 
-      docs.push(this.printPart(entry));
+      docs.push(alignedDeclarations?.get(entry) ?? this.printPart(entry));
       previous = entry;
     }
 
@@ -727,8 +781,9 @@ export function formatSource(source, kind, options = {}) {
 
   const resultLexed = lexSource(output);
   const reparsed = resultLexed.diagnostics.length === 0 ? parseSource(output, kind) : null;
-  const originalTokens = stableTokens(parsed.tree);
-  const resultTokens = reparsed?.tree ? stableTokens(reparsed.tree) : [];
+  const stableOptions = { canonicalHeaders: style.syntax?.canonicalHeaders === "canonical" };
+  const originalTokens = stableTokens(parsed.tree, stableOptions);
+  const resultTokens = reparsed?.tree ? stableTokens(reparsed.tree, stableOptions) : [];
   const unchangedTokens = reparsed?.tree && resultTokens.length === originalTokens.length &&
     originalTokens.every((token, index) => token.kind === resultTokens[index].kind && token.text === resultTokens[index].text);
 

@@ -64,6 +64,22 @@
             false
           ],
           "type": "boolean"
+        },
+        "enums": {
+          "description": "Align equals signs and trailing comments in enum declarations.",
+          "default": true,
+          "examples": [
+            false
+          ],
+          "type": "boolean"
+        },
+        "fields": {
+          "description": "Align names, types, and equals signs in tuple, component, and graph field declarations.",
+          "default": true,
+          "examples": [
+            false
+          ],
+          "type": "boolean"
         }
       }
     },
@@ -220,9 +236,9 @@
       "properties": {
         "sort": {
           "description": "Sort complete imports with attached comments into standard, Contracts and project groups.",
-          "default": false,
+          "default": true,
           "examples": [
-            true
+            false
           ],
           "type": "boolean"
         }
@@ -266,6 +282,37 @@
             "preserve",
             "always",
             "never"
+          ]
+        },
+        "betweenFunctions": {
+          "description": "Enforce a blank line between function and event members in graphs.",
+          "default": "preserve",
+          "examples": [
+            "always"
+          ],
+          "type": "string",
+          "enum": [
+            "always",
+            "preserve",
+            "never"
+          ]
+        }
+      }
+    },
+    "syntax": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "canonicalHeaders": {
+          "description": "Keep or strip redundant parentheses around if/for/while condition headers.",
+          "default": "preserve",
+          "examples": [
+            "canonical"
+          ],
+          "type": "string",
+          "enum": [
+            "preserve",
+            "canonical"
           ]
         }
       }
@@ -361,6 +408,22 @@
                 "properties": {
                   "collections": {
                     "description": "Align map colons and struct equals signs in broken collections.",
+                    "default": true,
+                    "examples": [
+                      false
+                    ],
+                    "type": "boolean"
+                  },
+                  "enums": {
+                    "description": "Align equals signs and trailing comments in enum declarations.",
+                    "default": true,
+                    "examples": [
+                      false
+                    ],
+                    "type": "boolean"
+                  },
+                  "fields": {
+                    "description": "Align names, types, and equals signs in tuple, component, and graph field declarations.",
                     "default": true,
                     "examples": [
                       false
@@ -522,9 +585,9 @@
                 "properties": {
                   "sort": {
                     "description": "Sort complete imports with attached comments into standard, Contracts and project groups.",
-                    "default": false,
+                    "default": true,
                     "examples": [
-                      true
+                      false
                     ],
                     "type": "boolean"
                   }
@@ -568,6 +631,37 @@
                       "preserve",
                       "always",
                       "never"
+                    ]
+                  },
+                  "betweenFunctions": {
+                    "description": "Enforce a blank line between function and event members in graphs.",
+                    "default": "preserve",
+                    "examples": [
+                      "always"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "always",
+                      "preserve",
+                      "never"
+                    ]
+                  }
+                }
+              },
+              "syntax": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "canonicalHeaders": {
+                    "description": "Keep or strip redundant parentheses around if/for/while condition headers.",
+                    "default": "preserve",
+                    "examples": [
+                      "canonical"
+                    ],
+                    "type": "string",
+                    "enum": [
+                      "preserve",
+                      "canonical"
                     ]
                   }
                 }

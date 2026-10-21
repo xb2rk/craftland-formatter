@@ -8,12 +8,13 @@ const DIAGNOSTIC_DELAY_MS = 200;
 const OPTION_PATHS = [
   "printWidth",
   "indent.style", "indent.size", "indent.continuation",
-  "alignment.collections",
+  "alignment.collections", "alignment.enums", "alignment.fields",
   "endOfLine", "finalNewline", "lineBreaks",
   "wrap.calls", "wrap.parameters", "wrap.collections", "wrap.conditions",
   "spacing.operators", "spacing.assignment", "spacing.comma", "spacing.brackets",
   "imports.sort",
-  "blankLines.maxConsecutive", "blankLines.afterImports", "blankLines.betweenMembers"
+  "blankLines.maxConsecutive", "blankLines.afterImports", "blankLines.betweenMembers", "blankLines.betweenFunctions",
+  "syntax.canonicalHeaders"
 ];
 
 function extractVsCodeSettings(vscode, document) {
@@ -553,6 +554,54 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
     }
   }
 
+  function prepareOrganizeImports(document) {
+    if (!isFcDocument(document)) {
+      return { edits: [] };
+    }
+
+    const source = document.getText();
+    const kind = extname(document.uri.fsPath).slice(1).toLowerCase();
+    const parsed = core.parseSource(source, kind);
+
+    if (!parsed?.tree || parsed.diagnostics?.length) {
+      return { edits: [], error: "Cannot organize imports: document has syntax errors." };
+    }
+
+    const eol = document.eol === (vscode.EndOfLine?.CRLF ?? 2) ? "\r\n" : "\n";
+    const organized = core.organizeImports ? core.organizeImports(source, parsed.tree, [], eol) : source;
+
+    if (organized === source) {
+      return { edits: [] };
+    }
+
+    const edits = minimalEdit(document, organized, vscode);
+    return { edits };
+  }
+
+  async function organizeImportsCommand() {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !isFcDocument(editor.document)) {
+      void vscode.window.showInformationMessage("Open a .fcg or .fcc file first.");
+      return;
+    }
+
+    const prepared = prepareOrganizeImports(editor.document);
+    if (prepared.error) {
+      void vscode.window.showErrorMessage("FC Format v5: " + prepared.error);
+      return;
+    }
+
+    if (prepared.edits.length === 0) {
+      return;
+    }
+
+    await editor.edit((builder) => {
+      for (const edit of prepared.edits) {
+        builder.replace(edit.range, edit.newText);
+      }
+    });
+  }
+
   const selector = [
     { scheme: "file", language: "ffugclanguage" },
     { scheme: "file", pattern: "**/*.fcg" },
@@ -582,6 +631,31 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
         return prepareRangeFormat(document, range, options).edits;
       },
     }),
+    vscode.languages.registerCodeActionsProvider(selector, {
+      provideCodeActions(document, range, codeActionContext) {
+        const hasOrganizeRequest = !codeActionContext.only ||
+          (codeActionContext.only.contains && codeActionContext.only.contains(vscode.CodeActionKind.SourceOrganizeImports));
+
+        if (!hasOrganizeRequest) {
+          return [];
+        }
+
+        const prepared = prepareOrganizeImports(document);
+        if (prepared.edits.length === 0) {
+          return [];
+        }
+
+        const action = new vscode.CodeAction("Organize FC Imports", vscode.CodeActionKind.SourceOrganizeImports);
+        action.edit = new vscode.WorkspaceEdit();
+        for (const edit of prepared.edits) {
+          action.edit.replace(document.uri, edit.range, edit.newText);
+        }
+
+        return [action];
+      },
+    }, {
+      providedCodeActionKinds: [vscode.CodeActionKind.SourceOrganizeImports],
+    }),
     vscode.workspace.registerTextDocumentContentProvider(PREVIEW_SCHEME, {
       provideTextDocumentContent(uri) {
         return virtualDocuments.get(uri.toString()) ?? "";
@@ -591,6 +665,7 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
     vscode.commands.registerCommand("fcfmt.explainConfig", explainConfig),
     vscode.commands.registerCommand("fcfmt.formatDocument", formatCommand),
     vscode.commands.registerCommand("fcfmt.formatSelection", formatSelectionCommand),
+    vscode.commands.registerCommand("fcfmt.organizeImports", organizeImportsCommand),
     vscode.workspace.onDidOpenTextDocument(scheduleDiagnostics),
     vscode.workspace.onDidChangeTextDocument((event) => scheduleDiagnostics(event.document)),
     vscode.workspace.onDidCloseTextDocument((document) => {
@@ -639,12 +714,13 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
 
 async function activate(context) {
   const vscode = require("vscode");
-  const [service, config, syntax, diff, lint] = await Promise.all([
+  const [service, config, syntax, diff, lint, imports] = await Promise.all([
     import("./core/service.mjs"),
     import("./core/config.mjs"),
     import("./core/syntax/parser.mjs"),
     import("./core/diff.mjs"),
     import("./core/lint/engine.mjs"),
+    import("./core/imports.mjs"),
   ]);
 
   createExtension(vscode, {
@@ -653,6 +729,7 @@ async function activate(context) {
     parseSource: syntax.parseSource,
     computeLineHunks: diff.computeLineHunks,
     lintSource: lint.lintSource,
+    organizeImports: imports.organizeImports,
   }, context);
 }
 
