@@ -1,0 +1,210 @@
+{
+  "name": "fc-format",
+  "displayName": "FC Format & Lint",
+  "description": "Formatter and linter for Free Fire Craftland Code (.fcg/.fcc). Coexists with the official ffugclanguage extension.",
+  "version": "0.1.0",
+  "publisher": "fc-format",
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Formatters",
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "freefire",
+    "fcg",
+    "fcc",
+    "craftland"
+  ],
+  "activationEvents": [
+    "onLanguage:ffugclanguage"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "fcFormat.fixAll",
+        "title": "FC Format: Fix All (format document)"
+      },
+      {
+        "command": "fcFormat.lint",
+        "title": "FC Format: Lint Document"
+      }
+    ],
+    "configuration": {
+      "title": "FC Format",
+      "properties": {
+        "fcFormat.indentWidth": {
+          "type": "number",
+          "default": 2,
+          "description": "Indentation width in columns."
+        },
+        "fcFormat.useTabs": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use tabs instead of spaces for indentation."
+        },
+        "fcFormat.maxLineLength": {
+          "type": "number",
+          "default": 120,
+          "description": "Target maximum line length before wrapping."
+        },
+        "fcFormat.endOfLine": {
+          "type": "string",
+          "enum": [
+            "lf",
+            "crlf",
+            "auto"
+          ],
+          "default": "lf",
+          "description": "Line ending style."
+        },
+        "fcFormat.trimTrailingWhitespace": {
+          "type": "boolean",
+          "default": true
+        },
+        "fcFormat.insertFinalNewline": {
+          "type": "boolean",
+          "default": true
+        },
+        "fcFormat.trimFinalNewlines": {
+          "type": "boolean",
+          "default": true
+        },
+        "fcFormat.braceStyle": {
+          "type": "string",
+          "enum": [
+            "sameLine",
+            "nextLine"
+          ],
+          "default": "sameLine",
+          "description": "K&R (sameLine) vs Allman (nextLine). FC convention is sameLine."
+        },
+        "fcFormat.spacesAroundOperators": {
+          "type": "boolean",
+          "default": true
+        },
+        "fcFormat.spacesInsideBraces": {
+          "type": "boolean",
+          "default": false
+        },
+        "fcFormat.spacesInsideParens": {
+          "type": "boolean",
+          "default": false
+        },
+        "fcFormat.importSort.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sort and regroup imports (std / stdlib / contracts / relative)."
+        },
+        "fcFormat.importSort.order": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "std",
+              "stdlib",
+              "contracts",
+              "relative"
+            ]
+          },
+          "default": [
+            "std",
+            "stdlib",
+            "contracts",
+            "relative"
+          ]
+        },
+        "fcFormat.importSort.blankLineBetweenGroups": {
+          "type": "boolean",
+          "default": true
+        },
+        "fcFormat.importSort.relativeDepthOrder": {
+          "type": "string",
+          "enum": [
+            "descending",
+            "ascending"
+          ],
+          "default": "descending"
+        },
+        "fcFormat.trailingComma.multilineCalls": {
+          "type": "string",
+          "enum": [
+            "always",
+            "never",
+            "preserve"
+          ],
+          "default": "preserve"
+        },
+        "fcFormat.trailingComma.multilineCollections": {
+          "type": "string",
+          "enum": [
+            "always",
+            "never",
+            "preserve"
+          ],
+          "default": "always"
+        },
+        "fcFormat.blankLines.collapse": {
+          "type": "boolean",
+          "default": true
+        },
+        "fcFormat.blankLines.minBetweenTopLevelDecls": {
+          "type": "number",
+          "default": 1
+        },
+        "fcFormat.blankLines.maxConsecutive": {
+          "type": "number",
+          "default": 2
+        },
+        "fcFormat.wrapLongConditions": {
+          "type": "string",
+          "enum": [
+            "fit",
+            "always",
+            "never"
+          ],
+          "default": "fit"
+        },
+        "fcFormat.wrapLongSignatures": {
+          "type": "string",
+          "enum": [
+            "fit",
+            "always",
+            "never"
+          ],
+          "default": "never"
+        },
+        "fcFormat.wrapLongCalls": {
+          "type": "string",
+          "enum": [
+            "fit",
+            "always",
+            "never"
+          ],
+          "default": "fit"
+        },
+        "fcFormat.binaryOperatorLineBreak": {
+          "type": "string",
+          "enum": [
+            "afterOperator",
+            "beforeOperator"
+          ],
+          "default": "afterOperator"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.134.0"
+  },
+  "dependencies": {
+    "@types/node": "^20.19.43"
+  }
+}

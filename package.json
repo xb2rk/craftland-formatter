@@ -1,0 +1,24 @@
+{
+  "name": "fc-format",
+  "version": "0.1.0",
+  "description": "Formatter and linter for Free Fire Craftland Code (.fcg / .fcc)",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "bin": {
+    "fc-format": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "parse": "node dist/cli.js parse",
+    "fmt": "node dist/cli.js format",
+    "lint": "node dist/cli.js lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^20.11.0"
+  }
+}
