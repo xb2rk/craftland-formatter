@@ -1,3 +1,7 @@
+/**
+ * Parse diagnostics reported during AST construction.
+ */
+
 import type { SourceRange } from "../lex/position.js";
 
 export type ParseDiagnosticCode =
@@ -8,7 +12,10 @@ export type ParseDiagnosticCode =
   | "unexpected-decorator"
   | "unexpected-token";
 
-/** A recoverable parser diagnostic. Invalid input is never silently rewritten. */
+/**
+ * A recoverable parse diagnostic. Invalid inputs are reported cleanly and
+ * never silently dropped or corrupted.
+ */
 export interface ParseDiagnostic {
   readonly code: ParseDiagnosticCode;
   readonly message: string;

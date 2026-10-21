@@ -1,15 +1,48 @@
 {
-  "name": "fc-format",
-  "version": "0.1.0",
+  "name": "fc-format-v4",
+  "version": "0.4.0",
   "private": true,
-  "description": "Deterministic formatter for Craftland Studio FC source files.",
+  "description": "Next-generation modular, deterministic formatter and language toolchain for Craftland Studio FC.",
   "type": "module",
   "engines": {
     "node": ">=20.19.0"
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "fc-format-v4": "./dist/cli/format.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./grammar": {
+      "types": "./dist/grammar/index.d.ts",
+      "import": "./dist/grammar/index.js"
+    },
+    "./lex": {
+      "types": "./dist/lex/index.d.ts",
+      "import": "./dist/lex/index.js"
+    },
+    "./syntax": {
+      "types": "./dist/syntax/index.d.ts",
+      "import": "./dist/syntax/index.js"
+    },
+    "./parser": {
+      "types": "./dist/parser/index.d.ts",
+      "import": "./dist/parser/index.js"
+    },
+    "./format": {
+      "types": "./dist/format/index.d.ts",
+      "import": "./dist/format/index.js"
+    },
+    "./imports": {
+      "types": "./dist/imports/index.d.ts",
+      "import": "./dist/imports/index.js"
+    }
+  },
   "scripts": {
-    "bench": "tsx scripts/bench-format.ts",
-    "bridge": "tsx src/cli/bridge.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
@@ -17,13 +50,8 @@
     "grammar:generate": "node scripts/gen-token-vocabulary.mjs",
     "grammar:check": "node scripts/gen-token-vocabulary.mjs --check",
     "verify:grammar": "npm run grammar:check",
-    "verify:eos": "tsx scripts/verify-eos.ts",
-    "oracle": "tsx src/cli/oracle.ts",
     "format": "tsx src/cli/format.ts",
     "format:check": "tsx src/cli/format.ts --check",
-    "graphify": "tsx src/cli/graphify.ts",
-    "lint": "tsx src/cli/lint.ts",
-    "lint:json": "tsx src/cli/lint.ts --json",
     "ci": "npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {
@@ -31,8 +59,5 @@
     "tsx": "4.23.13",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
-  },
-  "allowScripts": {
-    "esbuild@0.28.2": true
   }
 }

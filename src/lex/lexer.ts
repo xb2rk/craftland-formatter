@@ -1,3 +1,12 @@
+/**
+ * Lossless, source-preserving FC lexer.
+ *
+ * Scans FC source into exact tokens preserving all trivia (whitespace, line comments,
+ * block comments, JSDoc). It never injects synthetic EOS tokens or alters source bytes.
+ *
+ * @see GRAMMAR.md §2 (Lexical Rules)
+ */
+
 import {
   isDecimalDigit,
   isHexDigit,
@@ -11,12 +20,18 @@ import {
 } from "../grammar/lexical.js";
 import { TokenId } from "../grammar/token-vocabulary.generated.js";
 import type { LexDiagnostic, LexDiagnosticCode } from "./diagnostic.js";
-import type { SourcePosition, SourceRange } from "./position.js";
+import type { SourcePosition } from "./position.js";
 import type { Token } from "./token.js";
 
+/**
+ * Result of lexing an FC source string.
+ */
 export interface LexResult {
+  /** Any lexical diagnostics encountered during scanning. */
   readonly diagnostics: readonly LexDiagnostic[];
+  /** The original source string. */
   readonly source: string;
+  /** Complete, lossless stream of tokens covering the entire source string. */
   readonly tokens: readonly Token[];
 }
 
@@ -31,17 +46,18 @@ interface Mark {
 }
 
 /**
- * Lossless FC lexer.
+ * Lexes an FC source string into a lossless token stream.
  *
- * It intentionally emits source trivia and an EOF sentinel, but never ANTLR's
- * synthetic EOS token. Parser phases derive statement boundaries from raw
- * trivia and parser context instead of making formatter output depend on
- * lexer-mode state.
+ * @param source - The raw FC source code to tokenize.
+ * @returns Complete LexResult with tokens and any recoverable diagnostics.
  */
 export function lex(source: string): LexResult {
   return new Scanner(source).scan();
 }
 
+/**
+ * State machine scanner that advances character-by-character and emits tokens.
+ */
 class Scanner {
   private column = 0;
   private index = 0;
@@ -95,9 +111,18 @@ class Scanner {
       }
     }
 
-    const eof = this.position();
-    this.tokens.push({ kind: TokenId.EOF, range: { start: eof, end: eof }, text: "" });
-    return { source: this.source, tokens: this.tokens, diagnostics: this.diagnostics };
+    const eofPosition = this.position();
+    this.tokens.push({
+      kind: TokenId.EOF,
+      range: { start: eofPosition, end: eofPosition },
+      text: "",
+    });
+
+    return {
+      diagnostics: this.diagnostics,
+      source: this.source,
+      tokens: this.tokens,
+    };
   }
 
   private addDiagnostic(code: LexDiagnosticCode, message: string, start: Mark, end: SourcePosition): void {
@@ -121,16 +146,22 @@ class Scanner {
   private isColorLiteral(start: number): boolean {
     const remaining = this.source.slice(start + 1);
     const firstSix = remaining.slice(0, 6);
-    if (firstSix.length !== 6 || ![...firstSix].every(isHexDigit)) return false;
+    if (firstSix.length !== 6 || ![...firstSix].every(isHexDigit)) {
+      return false;
+    }
     const seventh = remaining[6] ?? "";
-    if (!isHexDigit(seventh)) return true;
+    if (!isHexDigit(seventh)) {
+      return true;
+    }
     const alpha = remaining.slice(6, 8);
     return alpha.length === 2 && [...alpha].every(isHexDigit);
   }
 
   private isNumberStart(start: number): boolean {
-    return isDecimalDigit(this.characterAt(start)) ||
-      (this.characterAt(start) === "." && isDecimalDigit(this.characterAt(start + 1)));
+    return (
+      isDecimalDigit(this.characterAt(start)) ||
+      (this.characterAt(start) === "." && isDecimalDigit(this.characterAt(start + 1)))
+    );
   }
 
   private mark(): Mark {
@@ -160,6 +191,7 @@ class Scanner {
     while (cursor < this.source.length && !(this.source[cursor] === "*" && this.source[cursor + 1] === "/")) {
       cursor += this.characterAt(cursor).length;
     }
+
     if (cursor < this.source.length) {
       this.emit(TokenId.COMMENT, start, cursor + 2);
       return;
@@ -197,8 +229,12 @@ class Scanner {
   private scanExponent(start: number, marker: "e" | "E" | "p" | "P"): number | undefined {
     if (this.characterAt(start) !== marker) return undefined;
     let cursor = start + 1;
-    if (this.characterAt(cursor) === "+" || this.characterAt(cursor) === "-") cursor += 1;
-    if (!isDecimalDigit(this.characterAt(cursor))) return undefined;
+    if (this.characterAt(cursor) === "+" || this.characterAt(cursor) === "-") {
+      cursor += 1;
+    }
+    if (!isDecimalDigit(this.characterAt(cursor))) {
+      return undefined;
+    }
     return this.scanDigitSequence(cursor, isDecimalDigit);
   }
 
@@ -227,10 +263,16 @@ class Scanner {
     if (!leadingDot && this.characterAt(cursor) === "0") {
       const prefix = this.characterAt(cursor + 1);
       if (prefix === "b" || prefix === "B") {
-        return this.withImaginary(this.scanDigitSequence(cursor + 2, (character) => character === "0" || character === "1"), TokenId.BINARY_LIT);
+        return this.withImaginary(
+          this.scanDigitSequence(cursor + 2, (char) => char === "0" || char === "1"),
+          TokenId.BINARY_LIT,
+        );
       }
       if (prefix === "o" || prefix === "O") {
-        return this.withImaginary(this.scanDigitSequence(cursor + 2, (character) => character >= "0" && character <= "7"), TokenId.OCTAL_LIT);
+        return this.withImaginary(
+          this.scanDigitSequence(cursor + 2, (char) => char >= "0" && char <= "7"),
+          TokenId.OCTAL_LIT,
+        );
       }
       if (prefix === "x" || prefix === "X") {
         cursor = this.scanDigitSequence(cursor + 2, isHexDigit);
@@ -273,7 +315,9 @@ class Scanner {
       const character = this.characterAt(cursor);
       if (character === "\\") {
         cursor += character.length;
-        if (cursor < this.source.length) cursor += this.characterAt(cursor).length;
+        if (cursor < this.source.length) {
+          cursor += this.characterAt(cursor).length;
+        }
       } else if (character === quote) {
         this.emit(kind, start, cursor + quote.length);
         return;
@@ -283,7 +327,12 @@ class Scanner {
     }
 
     this.emit(kind, start, this.source.length);
-    this.addDiagnostic(diagnosticCode, `Unterminated ${quote === "'" ? "rune" : "interpreted string"} literal.`, start, this.position());
+    this.addDiagnostic(
+      diagnosticCode,
+      `Unterminated ${quote === "'" ? "rune" : "interpreted string"} literal.`,
+      start,
+      this.position(),
+    );
   }
 
   private scanRawString(start: Mark): void {
@@ -291,6 +340,7 @@ class Scanner {
     while (cursor < this.source.length && this.characterAt(cursor) !== "`") {
       cursor += this.characterAt(cursor).length;
     }
+
     if (cursor < this.source.length) {
       this.emit(TokenId.RAW_STRING_LIT, start, cursor + 1);
       return;
@@ -327,7 +377,9 @@ class Scanner {
         this.column = 0;
         this.previousWasCarriageReturn = true;
       } else if (character === "\n") {
-        if (!this.previousWasCarriageReturn) this.line += 1;
+        if (!this.previousWasCarriageReturn) {
+          this.line += 1;
+        }
         this.column = 0;
         this.previousWasCarriageReturn = false;
       } else {

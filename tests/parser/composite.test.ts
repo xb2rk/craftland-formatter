@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { lex } from "../../src/lex/lexer.js";
-import { parseExpression } from "../../src/parser/type-expression-parser.js";
+import { lex } from "../../src/lex/index.js";
+import { parseExpression } from "../../src/parser/index.js";
 
 describe("FC composite expression parser", () => {
   it("parses tagged and bare positional composites, including nested values", () => {
@@ -22,7 +22,7 @@ describe("FC composite expression parser", () => {
   });
 
   it("parses map and struct entries with exact separators and trailing commas", () => {
-    const map = parseExpression(lex("Map<string, int>{\"seed\": List<object>{},}"));
+    const map = parseExpression(lex('Map<string, int>{"seed": List<object>{},}'));
     expect(map.diagnostics).toEqual([]);
     expect(map.node).toMatchObject({
       kind: "map-composite-expression",
@@ -47,7 +47,11 @@ describe("FC composite expression parser", () => {
     expect(qualified.consumedThroughEof).toBe(true);
     expect(qualified.node).toMatchObject({
       kind: "struct-composite-expression",
-      typeName: { kind: "qualified-name", text: "CustomTuple.JsonDocument", segments: [{ text: "CustomTuple" }, { text: "JsonDocument" }] },
+      typeName: {
+        kind: "qualified-name",
+        text: "CustomTuple.JsonDocument",
+        segments: [{ text: "CustomTuple" }, { text: "JsonDocument" }],
+      },
       fields: [{ name: { text: "Nodes" } }, { name: { text: "RootIndex" } }],
     });
 
@@ -62,19 +66,22 @@ describe("FC composite expression parser", () => {
   });
 
   it("models LocString as its dedicated key-plus-list grammar", () => {
-    const parsed = parseExpression(lex("LocString{\"UI_KEY\", List<object>{value}}"));
+    const parsed = parseExpression(lex('LocString{"UI_KEY", List<object>{value}}'));
     expect(parsed.diagnostics).toEqual([]);
     expect(parsed.node).toMatchObject({
       kind: "loc-string-expression",
       key: { kind: "literal-expression" },
-      arguments: { kind: "positional-composite-expression", type: { type: { kind: "generic-type", constructorName: { text: "List" } } } },
+      arguments: {
+        kind: "positional-composite-expression",
+        type: { type: { kind: "generic-type", constructorName: { text: "List" } } },
+      },
     });
 
-    const missingArguments = parseExpression(lex("LocString{\"UI_KEY\"}"));
+    const missingArguments = parseExpression(lex('LocString{"UI_KEY"}'));
     expect(missingArguments.diagnostics.length).toBeGreaterThan(0);
     expect(missingArguments.consumedThroughEof).toBe(true);
 
-    const mapArguments = parseExpression(lex("LocString{\"UI_KEY\", {\"name\": value}}"));
+    const mapArguments = parseExpression(lex('LocString{"UI_KEY", {"name": value}}'));
     expect(mapArguments.diagnostics.length).toBeGreaterThan(0);
     expect(mapArguments.consumedThroughEof).toBe(true);
   });

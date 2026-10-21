@@ -1,11 +1,16 @@
 {
+  "$schema": "./schema.json",
   "printWidth": 120,
-  "tabWidth": 4,
+  "tabWidth": 2,
   "useTabs": false,
+  "endOfLine": "auto",
   "spaceAroundOperators": true,
   "spaceAfterComma": true,
+  "alignCompositeSeparators": true,
+  "bracketSpacing": false,
   "wrapCalls": "auto",
   "wrapCollections": "auto",
   "collapseBlankLines": true,
-  "insertFinalNewline": true
+  "insertFinalNewline": true,
+  "sortImports": true
 }

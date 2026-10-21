@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { lex } from "../../src/lex/lexer.js";
-import { parseGraphFile } from "../../src/parser/file-parser.js";
+import { lex } from "../../src/lex/index.js";
+import { parseGraphFile } from "../../src/parser/index.js";
 
 /**
  * Graph-body decorator placement (oracle-adjudicated): the reference

@@ -1,11 +1,10 @@
 /**
- * FC automatic-semicolon boundary analysis.
+ * FC virtual-semicolon boundary analysis.
  *
- * The source lexer deliberately preserves raw trivia rather than emulating
- * ANTLR's NLSEMI mode. This module recreates its observable EOS behavior over
- * that lossless token stream. It knows nothing about parser nesting: FCGLexer
- * itself can emit EOS inside parentheses, and grammar productions decide
- * whether such a boundary is valid in context.
+ * Recreates ANTLR's NLSEMI (EOS) boundary detection over a lossless token stream,
+ * identifying where virtual statement terminators can occur.
+ *
+ * @see GRAMMAR.md §2.3 (Automatic Semicolons)
  */
 
 import { TokenId } from "../grammar/token-vocabulary.generated.js";
@@ -29,9 +28,7 @@ export interface VirtualStatementBoundary {
 export type StatementBoundary = ExplicitStatementBoundary | VirtualStatementBoundary;
 
 /**
- * Token kinds that switch FCGLexer into its NLSEMI mode. This set is pinned by
- * `npm run verify:eos` against the installed extension; do not broaden it
- * based on a statement-level guess.
+ * Pinned token IDs that enable virtual statement endings (NLSEMI) in ANTLR.
  */
 const EOS_CAPABLE_TOKEN_IDS = new Set<number>([
   TokenId.IDENTIFIER,
@@ -83,15 +80,15 @@ const EOS_CAPABLE_TOKEN_IDS = new Set<number>([
   TokenId.INTERPRETED_STRING_LIT,
 ]);
 
-/** Returns whether an FCGLexer token enables NLSEMI after itself. */
+/**
+ * Checks whether an FC token enables a virtual semicolon if followed by a line break.
+ */
 export function canTriggerVirtualEos(token: Token): boolean {
   return EOS_CAPABLE_TOKEN_IDS.has(token.kind);
 }
 
 /**
- * Finds lexical separators in source order. Explicit semicolons are reported
- * as candidates even in grammar contexts (such as a future `for` header)
- * where a parser rule gives them a different meaning.
+ * Derives all statement boundaries (explicit ';' or virtual line break terminators) in source order.
  */
 export function deriveStatementBoundaries(tokens: readonly Token[]): readonly StatementBoundary[] {
   const boundaries: StatementBoundary[] = [];
@@ -115,7 +112,11 @@ export function deriveStatementBoundaries(tokens: readonly Token[]): readonly St
     }
 
     if (token.kind === TokenId.SEMI) {
-      boundaries.push({ kind: "explicit", range: token.range, separatorTokenIndex: tokenIndex });
+      boundaries.push({
+        kind: "explicit",
+        range: token.range,
+        separatorTokenIndex: tokenIndex,
+      });
     }
     eosArmedByTokenIndex = canTriggerVirtualEos(token) ? tokenIndex : undefined;
   }
@@ -126,13 +127,13 @@ export function deriveStatementBoundaries(tokens: readonly Token[]): readonly St
 function eosRangeWithinTrivia(token: Token): SourceRange {
   const kind = triviaKindOf(token);
   if (kind === "block-comment" || kind === "jsdoc") {
-    // FCGLexer emits the complete comment as EOS when an armed multiline block
-    // comment carries the first line terminator.
     return token.range;
   }
 
   const firstLineBreak = firstLineBreakOffset(token.text);
-  if (firstLineBreak === undefined) return token.range;
+  if (firstLineBreak === undefined) {
+    return token.range;
+  }
   const start = advancePosition(token.range.start, token.text.slice(0, firstLineBreak));
   const endOffset = consecutiveLineBreakEnd(token.text, firstLineBreak);
   const end = advancePosition(start, token.text.slice(firstLineBreak, endOffset));
@@ -142,8 +143,12 @@ function eosRangeWithinTrivia(token: Token): SourceRange {
 function firstLineBreakOffset(text: string): number | undefined {
   const carriageReturn = text.indexOf("\r");
   const lineFeed = text.indexOf("\n");
-  if (carriageReturn === -1) return lineFeed === -1 ? undefined : lineFeed;
-  if (lineFeed === -1) return carriageReturn;
+  if (carriageReturn === -1) {
+    return lineFeed === -1 ? undefined : lineFeed;
+  }
+  if (lineFeed === -1) {
+    return carriageReturn;
+  }
   return Math.min(carriageReturn, lineFeed);
 }
 
@@ -178,7 +183,9 @@ function advancePosition(start: SourcePosition, text: string): SourcePosition {
       column = 0;
       previousWasCarriageReturn = true;
     } else if (character === "\n") {
-      if (!previousWasCarriageReturn) line += 1;
+      if (!previousWasCarriageReturn) {
+        line += 1;
+      }
       column = 0;
       previousWasCarriageReturn = false;
     } else {

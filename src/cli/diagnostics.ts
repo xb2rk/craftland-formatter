@@ -1,36 +1,47 @@
-import type { FcDiagnostic } from "../diagnostics.js";
-import type { LexDiagnostic } from "../lex/diagnostic.js";
-import type { LintDiagnostic } from "../lint/contracts.js";
-import type { ParseDiagnostic } from "../parser/diagnostic.js";
+/**
+ * Diagnostics rendering subsystem for the CLI and user-facing reports.
+ *
+ * Formats errors and warnings into human-readable, IDE-navigable coordinate strings.
+ */
+
+import type { SourceRange } from "../lex/position.js";
 
 /**
- * Anything with a code (or lint ruleId), a message, and a range renders
- * through this module — the single human-facing diagnostic consumer (A1).
- * Lex, parse, lint, and unified Fc diagnostics are all assignable.
+ * Diagnostic shape accepted for human-facing terminal rendering.
  */
-export type RenderableDiagnostic = {
+export interface RenderableDiagnostic {
   readonly code?: string;
   readonly message: string;
-  readonly range: FcDiagnostic["range"];
+  readonly range: SourceRange;
   readonly ruleId?: string;
-};
+}
 
-/** How many diagnostics are printed before the remainder is summarized. */
+/** Maximum number of diagnostics printed before summarizing remainder. */
 export const MAX_REPORTED_DIAGNOSTICS = 10;
 
 /**
- * Renders one diagnostic as `file:line:column code message`. Source positions
- * are zero-based UTF-16 LSP coordinates; humans get one-based coordinates.
+ * Renders a single diagnostic into a standard 1-based `file:line:column code message` string.
+ *
+ * @param file - Relative or absolute path to the file.
+ * @param diagnostic - Diagnostic object containing coordinates and message.
  */
 export function formatDiagnostic(file: string, diagnostic: RenderableDiagnostic): string {
   const { line, column } = diagnostic.range.start;
-  return `${file}:${line + 1}:${column + 1} ${diagnostic.code ?? diagnostic.ruleId ?? "unknown"} ${diagnostic.message}`;
+  const tag = diagnostic.code ?? diagnostic.ruleId ?? "unknown";
+  return `${file}:${line + 1}:${column + 1} ${tag} ${diagnostic.message}`;
 }
 
-/** Renders the parenthesized diagnostic list for "cannot format source" errors. */
+/**
+ * Renders a list of diagnostics, truncating after {@link MAX_REPORTED_DIAGNOSTICS}.
+ *
+ * @param file - File path associated with diagnostics.
+ * @param diagnostics - Collection of diagnostics to render.
+ */
 export function formatDiagnosticList(file: string, diagnostics: readonly RenderableDiagnostic[]): string {
-  const shown = diagnostics.slice(0, MAX_REPORTED_DIAGNOSTICS).map((diagnostic) => formatDiagnostic(file, diagnostic));
+  const shown = diagnostics.slice(0, MAX_REPORTED_DIAGNOSTICS).map((d) => formatDiagnostic(file, d));
   const hidden = diagnostics.length - shown.length;
-  if (hidden > 0) shown.push(`...and ${hidden} more`);
+  if (hidden > 0) {
+    shown.push(`...and ${hidden} more`);
+  }
   return shown.join("; ");
 }

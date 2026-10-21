@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FC Format v4 Configuration",
+  "description": "Configuration schema for the Free Fire Craftland Code (FC) formatter v4.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON schema reference for editor autocompletion."
+    },
+    "printWidth": {
+      "type": "integer",
+      "default": 120,
+      "minimum": 20,
+      "maximum": 1000,
+      "description": "Target maximum line width in characters for automatic wrapping."
+    },
+    "tabWidth": {
+      "type": "integer",
+      "default": 2,
+      "minimum": 1,
+      "maximum": 16,
+      "description": "Visual character width of one indentation level."
+    },
+    "useTabs": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to indent with tab characters instead of spaces."
+    },
+    "endOfLine": {
+      "type": "string",
+      "enum": ["auto", "lf", "crlf"],
+      "default": "auto",
+      "description": "Line ending convention. 'auto' detects and preserves existing file line endings, 'lf' enforces Unix newlines (\\n), 'crlf' enforces Windows newlines (\\r\\n)."
+    },
+    "spaceAroundOperators": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to insert spaces around binary operators (e.g. `a + b` vs `a+b`)."
+    },
+    "spaceAfterComma": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to insert a space after commas in argument and collection lists."
+    },
+    "alignCompositeSeparators": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to column-align colons (`:`) in Map literals and equals signs (`=`) in Struct literals across multiline entries. Set to false for standard Prettier/Google diff-friendly layout."
+    },
+    "bracketSpacing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to insert spaces inside single-line composite braces (e.g. `Vector3{ 0, 0, 0 }` vs `Vector3{0, 0, 0}`)."
+    },
+    "wrapCalls": {
+      "type": "string",
+      "enum": ["never", "auto", "always"],
+      "default": "auto",
+      "description": "Wrapping strategy for function call arguments and parameter lists."
+    },
+    "wrapCollections": {
+      "type": "string",
+      "enum": ["never", "auto", "always"],
+      "default": "auto",
+      "description": "Wrapping strategy for composite literals (List, Map, Struct, Tuple)."
+    },
+    "collapseBlankLines": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to collapse consecutive empty lines down to a single empty line."
+    },
+    "maxBlankLines": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Maximum consecutive blank lines to preserve."
+    },
+    "insertFinalNewline": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ensure files end with a trailing newline character."
+    },
+    "sortImports": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to automatically sort and group file-header imports (Standard Library, Contracts, Relative)."
+    }
+  },
+  "additionalProperties": false
+}

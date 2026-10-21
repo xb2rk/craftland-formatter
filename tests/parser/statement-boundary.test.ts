@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { TokenId } from "../../src/grammar/token-vocabulary.generated.js";
-import { lex } from "../../src/lex/lexer.js";
-import { deriveStatementBoundaries } from "../../src/parser/statement-boundary.js";
+import { lex } from "../../src/lex/index.js";
+import { deriveStatementBoundaries } from "../../src/parser/index.js";
 import { EOS_CASES } from "../fixtures/eos-cases.js";
 
 function virtualEosText(source: string): string[] {

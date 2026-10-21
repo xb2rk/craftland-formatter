@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TokenId } from "../../src/grammar/token-vocabulary.generated.js";
-import { lex } from "../../src/lex/lexer.js";
-import { parseDomainType, parseExpression } from "../../src/parser/type-expression-parser.js";
+import { lex } from "../../src/lex/index.js";
+import { parseDomainType, parseExpression } from "../../src/parser/index.js";
 
 describe("FC type and expression parser", () => {
   it("parses nested generic types only in type position", () => {
@@ -54,7 +54,11 @@ describe("FC type and expression parser", () => {
       },
     });
 
-    const nested = parseDomainType(lex("Map<int, func(player entity<Player>, itemId int, target List<object>, out var payload List<object>) int>"));
+    const nested = parseDomainType(
+      lex(
+        "Map<int, func(player entity<Player>, itemId int, target List<object>, out var payload List<object>) int>",
+      ),
+    );
     expect(nested.diagnostics).toEqual([]);
     expect(nested.consumedThroughEof).toBe(true);
     expect(nested.node).toMatchObject({
@@ -89,7 +93,11 @@ describe("FC type and expression parser", () => {
 
     const shift = parseExpression(lex("a >> b"));
     expect(shift.diagnostics).toEqual([]);
-    expect(shift.node).toMatchObject({ kind: "binary-expression", operator: TokenId.GREATER, operatorTokenIndices: expect.any(Array) });
+    expect(shift.node).toMatchObject({
+      kind: "binary-expression",
+      operator: TokenId.GREATER,
+      operatorTokenIndices: expect.any(Array),
+    });
     expect((shift.node as { operatorTokenIndices: readonly number[] }).operatorTokenIndices).toHaveLength(2);
 
     const call = parseExpression(lex("foo(1, out var result).bar[0] as List<int>"));
@@ -100,7 +108,10 @@ describe("FC type and expression parser", () => {
         kind: "index-expression",
         object: {
           kind: "member-expression",
-          object: { kind: "call-expression", arguments: [{ kind: "literal-expression" }, { kind: "out-var-argument", name: { text: "result" } }] },
+          object: {
+            kind: "call-expression",
+            arguments: [{ kind: "literal-expression" }, { kind: "out-var-argument", name: { text: "result" } }],
+          },
         },
       },
       type: { type: { kind: "generic-type", constructorName: { text: "List" } } },
@@ -110,7 +121,10 @@ describe("FC type and expression parser", () => {
   it("matches the extension's ambiguous generic-access and cast behavior", () => {
     const genericMember = parseExpression(lex("Foo<Bar>.Baz"));
     expect(genericMember.diagnostics).toEqual([]);
-    expect(genericMember.node).toMatchObject({ kind: "member-expression", object: { kind: "generic-access-expression" } });
+    expect(genericMember.node).toMatchObject({
+      kind: "member-expression",
+      object: { kind: "generic-access-expression" },
+    });
 
     const relationalCall = parseExpression(lex("Foo<Bar>(x)"));
     expect(relationalCall.diagnostics).toEqual([]);
@@ -175,9 +189,18 @@ describe("FC type and expression parser", () => {
   });
 
   it.each([
-    ["true", "boolean"], ["nil", "nil"], ["123", "integer"], ["0b101", "integer"],
-    ["0o17", "integer"], ["0xFF", "integer"], ["1.5", "float"], ["2i", "imaginary"],
-    ["#aabbcc", "color"], ["'x'", "rune"], ["`raw`", "raw-string"], ["\"text\"", "string"],
+    ["true", "boolean"],
+    ["nil", "nil"],
+    ["123", "integer"],
+    ["0b101", "integer"],
+    ["0o17", "integer"],
+    ["0xFF", "integer"],
+    ["1.5", "float"],
+    ["2i", "imaginary"],
+    ["#aabbcc", "color"],
+    ["'x'", "rune"],
+    ["`raw`", "raw-string"],
+    ['"text"', "string"],
   ])("parses %s as a protected %s literal", (source, literalKind) => {
     const parsed = parseExpression(lex(source));
     expect(parsed.diagnostics).toEqual([]);

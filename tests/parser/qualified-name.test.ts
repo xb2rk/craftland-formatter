@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { lex } from "../../src/lex/lexer.js";
-import { parseGraphFile } from "../../src/parser/file-parser.js";
-import { parseExpression } from "../../src/parser/type-expression-parser.js";
+import { lex } from "../../src/lex/index.js";
+import { parseExpression, parseGraphFile } from "../../src/parser/index.js";
 
 /**
  * Qualified-name triage matrix. Multi-segment dotted names are a contract in
@@ -47,13 +46,15 @@ describe("qualified-name matrix", () => {
     expect(result.node).toMatchObject({
       kind: "struct-composite-expression",
       typeName: { text: "Outer" },
-      fields: [{
-        name: { text: "child" },
-        value: {
-          kind: "struct-composite-expression",
-          typeName: { kind: "qualified-name", text: "Inner.Deep" },
+      fields: [
+        {
+          name: { text: "child" },
+          value: {
+            kind: "struct-composite-expression",
+            typeName: { kind: "qualified-name", text: "Inner.Deep" },
+          },
         },
-      }],
+      ],
     });
   });
 

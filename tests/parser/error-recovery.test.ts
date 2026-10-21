@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { lex } from "../../src/lex/lexer.js";
-import { parseGraphFile, parseHeaderFile } from "../../src/parser/file-parser.js";
-import type { ParseDiagnostic } from "../../src/parser/diagnostic.js";
-import { parseExpression } from "../../src/parser/type-expression-parser.js";
+import { lex } from "../../src/lex/index.js";
+import {
+  parseExpression,
+  parseGraphFile,
+  parseHeaderFile,
+  type ParseDiagnostic,
+} from "../../src/parser/index.js";
 
 /**
  * Error-fence contract: inside one bracketed construct, the first failure at
@@ -57,7 +60,7 @@ describe("error fence", () => {
   });
 
   it("keeps single-failure constructs at exactly one diagnostic", () => {
-    expect(parseExpression(lex("Map<string, int>{\"a\": }")).diagnostics).toHaveLength(1);
+    expect(parseExpression(lex('Map<string, int>{"a": }')).diagnostics).toHaveLength(1);
     expect(parseExpression(lex("SpawnInfo{position = , yaw = 0}")).diagnostics).toHaveLength(1);
     expect(parseExpression(lex("Map<, int>{}")).diagnostics).toHaveLength(1);
   });
@@ -88,7 +91,7 @@ describe("sync recovery", () => {
     expect(result.diagnostics.length).toBeLessThanOrEqual(2);
     const names = (result.node?.graph?.members ?? []).map((m) => (m.kind === "function-declaration" ? m.name?.text : m.kind));
     expect(names).toEqual(["F", "H"]);
-    expect(messages(result.diagnostics)).toContain("Expected a graph member. Found \",\".");
+    expect(messages(result.diagnostics)).toContain('Expected a graph member. Found ",".');
   });
 
   it("preserves the closing brace after garbage", () => {
@@ -125,7 +128,7 @@ describe("sync recovery", () => {
     const result = parseHeaderFile(lex(`enum E { A ,,, B }`));
     expect(result.consumedThroughEof).toBe(true);
     expect(result.diagnostics.length).toBeLessThanOrEqual(2);
-    expect(messages(result.diagnostics)).toContain("Expected an enum member. Found \",\".");
+    expect(messages(result.diagnostics)).toContain('Expected an enum member. Found ",".');
     const decl = result.node?.declarations[0];
     expect(decl?.kind).toBe("enum-declaration");
     // `B` is identifier-started so no sync token can resync to it; it is
