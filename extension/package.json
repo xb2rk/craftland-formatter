@@ -2,7 +2,7 @@
   "name": "fc-format-v5-vscode",
   "displayName": "Free Fire Craftland Code Formatter",
   "description": "Official-grade code formatter, static linter, and range-formatting engine for Free Fire Craftland (.fcg, .fcc).",
-  "version": "1.1.2",
+  "version": "1.4.0",
   "publisher": "craftland-community",
   "icon": "resources/icon.png",
   "galleryBanner": {

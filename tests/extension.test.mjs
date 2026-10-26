@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { basename, join, resolve, sep } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -13,6 +13,18 @@ import { computeLineHunks } from "../src/diff.mjs";
 import { formatConfiguredSource } from "../src/service.mjs";
 import { parseSource } from "../src/syntax/parser.mjs";
 import { organizeImports } from "../src/imports.mjs";
+import { extractSymbols, extractFoldingRanges } from "../src/symbols/extractor.mjs";
+import {
+  getFileIndex,
+  getMemberCompletions,
+  getLocalCompletions,
+  findDefinition,
+  clearIndexCache,
+  getFoldingRanges,
+  getDocumentLinks,
+  getSignatureHelp,
+  searchWorkspaceSymbols,
+} from "../src/symbols/indexer.mjs";
 
 const require = createRequire(import.meta.url);
 const { createExtension, editorEdits, minimalEdit, rangeEdits } = require("../extension/src/extension.cjs");
@@ -77,6 +89,11 @@ function documentAt(path, source = compact) {
       const line = Math.min(position.line ?? 0, offsets.length - 1);
       return Math.min(this.getText().length, offsets[line] + (position.character ?? 0));
     },
+    lineAt(position) {
+      const lineNum = typeof position === "number" ? position : position.line;
+      const lines = this.getText().split(/\r\n|\r|\n/);
+      return { text: lines[lineNum] ?? "" };
+    },
   };
 }
 
@@ -135,6 +152,73 @@ function fakeVscode(document, customCore = null) {
       }
     },
     DiagnosticSeverity: { Error: 0 },
+    DocumentSymbol: class {
+      constructor(name, detail, kind, range, selectionRange) {
+        Object.assign(this, { name, detail, kind, range, selectionRange, children: [] });
+      }
+    },
+    CompletionItem: class {
+      constructor(label, kind) {
+        this.label = label;
+        this.kind = kind;
+      }
+    },
+    CompletionItemKind: { Method: 1, Function: 2, Field: 4, Variable: 5, Interface: 7, Module: 8, Enum: 12, Struct: 21, Event: 24 },
+    SymbolKind: { Class: 4, Field: 7, Enum: 9, Interface: 10, Function: 11, Variable: 12, Constant: 13, EnumMember: 21, Struct: 22, Event: 23, TypeParameter: 25 },
+    Location: class {
+      constructor(uri, range) {
+        this.uri = uri;
+        this.range = range;
+      }
+    },
+    SymbolInformation: class {
+      constructor(name, kind, containerName, location) {
+        Object.assign(this, { name, kind, containerName, location });
+      }
+    },
+    DocumentLink: class {
+      constructor(range, target) {
+        this.range = range;
+        this.target = target;
+      }
+    },
+    SignatureHelp: class {
+      constructor() {
+        this.signatures = [];
+        this.activeSignature = 0;
+        this.activeParameter = 0;
+      }
+    },
+    SignatureInformation: class {
+      constructor(label, documentation) {
+        this.label = label;
+        this.documentation = documentation;
+        this.parameters = [];
+      }
+    },
+    ParameterInformation: class {
+      constructor(label) {
+        this.label = label;
+      }
+    },
+    FoldingRange: class {
+      constructor(start, end, kind) {
+        this.start = start;
+        this.end = end;
+        this.kind = kind;
+      }
+    },
+    FoldingRangeKind: { Comment: 2, Imports: 1, Region: 3 },
+    MarkdownString: class {
+      constructor(val) {
+        this.value = val;
+      }
+    },
+    SnippetString: class {
+      constructor(val) {
+        this.value = val;
+      }
+    },
     EndOfLine: { LF: 1, CRLF: 2 },
     CodeActionKind: { SourceOrganizeImports: "source.organizeImports" },
     CodeAction: class { constructor(title, kind) { this.title = title; this.kind = kind; } },
@@ -174,9 +258,46 @@ function fakeVscode(document, customCore = null) {
         state.codeActionProvider = provider;
         return disposable();
       },
+      registerDocumentSymbolProvider(selector, provider) {
+        state.symbolSelector = selector;
+        state.documentSymbolProvider = provider;
+        return disposable();
+      },
+      registerCompletionItemProvider(selector, provider, ...triggers) {
+        state.completionSelector = selector;
+        state.completionProvider = provider;
+        state.completionTriggers = triggers;
+        return disposable();
+      },
+      registerDefinitionProvider(selector, provider) {
+        state.definitionSelector = selector;
+        state.definitionProvider = provider;
+        return disposable();
+      },
+      registerDocumentLinkProvider(selector, provider) {
+        state.linkSelector = selector;
+        state.documentLinkProvider = provider;
+        return disposable();
+      },
+      registerSignatureHelpProvider(selector, provider, ...triggers) {
+        state.signatureSelector = selector;
+        state.signatureHelpProvider = provider;
+        state.signatureTriggers = triggers;
+        return disposable();
+      },
+      registerFoldingRangeProvider(selector, provider) {
+        state.foldingSelector = selector;
+        state.foldingRangeProvider = provider;
+        return disposable();
+      },
+      registerWorkspaceSymbolProvider(provider) {
+        state.workspaceSymbolProvider = provider;
+        return disposable();
+      },
     },
     workspace: {
       textDocuments: [document],
+      workspaceFolders: document?.uri?.fsPath ? [{ uri: { fsPath: dirname(document.uri.fsPath) } }] : [],
       registerTextDocumentContentProvider(scheme, provider) {
         state.contentScheme = scheme;
         state.contentProvider = provider;
@@ -239,7 +360,11 @@ function fakeVscode(document, customCore = null) {
     },
   };
   const context = { subscriptions: [] };
-  const core = customCore ?? { formatConfiguredSource, resolveConfig, parseSource, computeLineHunks, organizeImports };
+  const core = customCore ?? {
+    formatConfiguredSource, resolveConfig, parseSource, computeLineHunks, organizeImports,
+    extractSymbols, getFileIndex, getMemberCompletions, getLocalCompletions, findDefinition, clearIndexCache,
+    extractFoldingRanges, getFoldingRanges, getDocumentLinks, getSignatureHelp, searchWorkspaceSymbols,
+  };
   const instance = createExtension(vscode, core, context, { diagnosticDelayMs: 10 });
 
   return {
@@ -258,7 +383,9 @@ test("extension build copies runtime, schema and user docs without the developme
   const target = join(directory, "dist");
   const files = copyExtensionRuntime(target);
 
-  assert.equal(files.length, 32);
+  assert.equal(files.length, 34);
+  assert.equal(fs.existsSync(join(target, "core", "symbols", "extractor.mjs")), true);
+  assert.equal(fs.existsSync(join(target, "core", "symbols", "indexer.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "diff.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "cache.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "layout", "collection-alignment.mjs")), true);
@@ -973,6 +1100,80 @@ test("organize imports command reorganizes imports and preserves unformatted cod
     const codeActionContext = { only: { contains: (kind) => kind === "source.organizeImports" } };
     const actions = editor.state.codeActionProvider.provideCodeActions(document, null, codeActionContext);
     assert.equal(actions.length, 0); // Already organized, 0 edits
+  } finally {
+    editor.dispose();
+  }
+}));
+
+test("symbols, completions, and definition providers integrate with VS Code host mock", () => fixture(async (directory) => {
+  const gridMathFile = join(directory, "GridMath.fcg");
+  const gridMathSource = [
+    'import "StdLibrary.fcc" as StdLibrary',
+    '',
+    'graph GridMath {',
+    '  func GetGardenLaneHeightY() float { return 0.2 }',
+    '  func GetGardenCenterPosition(id int) int { return id }',
+    '}',
+  ].join("\n");
+  fs.writeFileSync(gridMathFile, gridMathSource);
+
+  const mainFile = join(directory, "MainLogic.fcg");
+  const mainSource = [
+    'import "./GridMath.fcg" as GridMath',
+    '',
+    'graph MainLogic {',
+    '  func Run() {',
+    '    var a = GridMath.Get',
+    '  }',
+    '}',
+  ].join("\n");
+  fs.writeFileSync(mainFile, mainSource);
+
+  const document = documentAt(mainFile, mainSource);
+  const editor = fakeVscode(document);
+
+  try {
+    // 1. Test Document Symbols
+    assert.ok(editor.state.documentSymbolProvider);
+    const symbols = editor.state.documentSymbolProvider.provideDocumentSymbols(document);
+    assert.equal(symbols.length, 1);
+    assert.equal(symbols[0].name, "MainLogic");
+    assert.equal(symbols[0].children.length, 1);
+    assert.equal(symbols[0].children[0].name, "Run");
+
+    // 2. Test Smart Autocompletion: GridMath.Get
+    assert.ok(editor.state.completionProvider);
+    const pos = new editor.vscode.Position(4, "    var a = GridMath.Get".length);
+    const completions = editor.state.completionProvider.provideCompletionItems(document, pos);
+    assert.ok(completions.length >= 2);
+    assert.ok(completions.some((c) => c.label === "GetGardenLaneHeightY"));
+    assert.ok(completions.some((c) => c.label === "GetGardenCenterPosition"));
+    // Verify sortText starts with 00_
+    assert.ok(completions[0].sortText.startsWith("00_"));
+    // Verify auto-trigger parameter hints command is attached
+    assert.equal(completions[0].command?.command, "editor.action.triggerParameterHints");
+
+    // 3. Verify DefinitionProvider and SignatureHelpProvider are NOT registered
+    // This yields Go to Definition and Signature Help to the official extension to avoid "Definitions (2)" popups
+    assert.equal(editor.state.definitionProvider, undefined);
+    assert.equal(editor.state.signatureHelpProvider, undefined);
+
+    // 4. Test Clickable Document Links
+    assert.ok(editor.state.documentLinkProvider);
+    const links = editor.state.documentLinkProvider.provideDocumentLinks(document);
+    assert.equal(links.length, 1);
+    assert.equal(links[0].target.fsPath, gridMathFile);
+
+    // 5. Test Code Folding Ranges
+    assert.ok(editor.state.foldingRangeProvider);
+    const folds = editor.state.foldingRangeProvider.provideFoldingRanges(document);
+    assert.ok(folds.length >= 1, "Should provide code folding ranges");
+
+    // 7. Test Workspace Symbol Search
+    assert.ok(editor.state.workspaceSymbolProvider);
+    const wsSymbols = editor.state.workspaceSymbolProvider.provideWorkspaceSymbols("GetGarden");
+    assert.ok(wsSymbols.length >= 1);
+    assert.ok(wsSymbols.some((s) => s.name === "GetGardenLaneHeightY"));
   } finally {
     editor.dispose();
   }

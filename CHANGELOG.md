@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.4.0
+
+- **High-Signal Graphify Knowledge Graph Bridge**:
+  - Deterministic, zero-LLM-token AST & Event extraction engine (`src/graphify/extractor.mjs`) extracting modules, public domain contracts, platform decorators, and event topology.
+  - **Strict Stop-Symbol Suppression**: Completely filters out standard library symbols (`StdLibrary`, `List`, `Map`, `Math`, `min`, `max`, `clamp`, `log`, `print`) and external extension libraries, eliminating graph hairball artifacts.
+  - **Universal Event-Driven Topology**: Accurately recognizes native FC dispatch functions (`DispatchEventToEntity`, `BroadcastCustomEvent`, `DispatchEvent`, `DispatchEventWithPlatform`) and maps them to `event` declarations and `EventListener` handlers.
+  - **Docs Anchoring**: Automatically links documentation in `docs/*.md` to corresponding code module nodes via `specifies` edges.
+- **Universal Blast Radius & Architecture Query Engine (`src/graphify/query.mjs`)**:
+  - **Transitive Explosion Protection**: Reverse-only dependency traversal coupled with Hub-Suppressed Reachability (stops expansion through nodes with in-degree > 20) preventing combinatorial explosion.
+  - **Tarjan's SCC Circular Import Detection**: Identifies co-dependent circular import twins and alerts developers/agents to review both files simultaneously.
+  - **Symbol Ambiguity Detection**: Disambiguates identically named functions (e.g. `InitializePlayer` across 22 files), returning candidate disambiguation lists or requiring qualified `<Module>.<Function>` names.
+- **CLI Tooling**:
+  - `npm run graphify`: Rebuilds the entire project knowledge graph to interactive HTML (`graph.html`), Obsidian markdown vault (`obsidian/`), and architectural summary (`GRAPH_REPORT.md`).
+  - `npm run graphify:query -- <symbol-or-file> [--json]`: Compact impact analysis tool tailored for AI Agent context injection.
+
+## 1.3.0
+
+- **Language Server & IDE Experience (`src/symbols/`)**:
+  - Concrete Symbol Extraction & Workspace Indexer: Document Symbols outline, Smart Autocompletion with dot-access & local scope, clickable Document Links, Folding Ranges, and Workspace Symbol Search (`Ctrl+T`).
+  - Safe definition and signature yielding to the official extension to avoid duplicate VS Code popups.
+
+## 1.1.2
+
+- **Multiline Collection Preservation**: Preserve multiline collections in auto mode and add `wrap.collections` `preserve` option.
+
+## 1.1.1
+
+- **Call Wrapping Preservation**: Added `wrap.calls` `preserve` mode (default) to keep single-line function calls authored.
+
+## 1.1.0
+
+- **Declaration Alignment & VS Code DX Upgrade**:
+  - Aligned names, types, and equals signs in enums, tuples, and graph member declarations.
+  - Default sort imports with attached comments and `organizeImports` command.
+  - Canonical condition headers support.
+
+## 1.0.0
+
+- Production release of fc-format-v5 zero-dependency Wadler-Leijen layout engine with lossless comment/trivia preservation.
+
 ## 0.9.0
 
 - Default `wrap.parameters` to `preserve`: keep authored parameter break

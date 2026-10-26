@@ -125,6 +125,29 @@ export function parseSource(source, kind) {
 }
 
 /**
+ * Parse a source file into a structural tree even if diagnostics are present.
+ * Used for IDE symbols, outline, and autocompletion during active editing.
+ *
+ * @param {string} source
+ * @param {"fcg" | "fcc"} kind
+ * @returns {ParseResult}
+ */
+export function parseTolerantSource(source, kind) {
+  if (kind !== "fcg" && kind !== "fcc") {
+    throw new TypeError("kind must be fcg or fcc");
+  }
+
+  const lexed = lexSource(source);
+  const parser = new StructuralParser(source, lexed.tokens);
+  const root = parser.parseFile(kind);
+
+  return {
+    tree: { ...root, tokens: lexed.tokens },
+    diagnostics: parser.diagnostics,
+  };
+}
+
+/**
  * A cursor over syntax tokens. Source gaps remain available through offsets;
  * discarding trivia here would otherwise hide virtual end-of-statement rules.
  */

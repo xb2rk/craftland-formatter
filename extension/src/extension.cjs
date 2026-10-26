@@ -208,6 +208,47 @@ function rangeEdits(document, output, range, vscode, core) {
   return edits;
 }
 
+/** Convert a core SymbolNode to a VS Code DocumentSymbol with hierarchy. */
+function toVsCodeSymbol(symbol, vscode) {
+  const kindMap = {
+    Graph: vscode.SymbolKind?.Class ?? 4,
+    Function: vscode.SymbolKind?.Function ?? 11,
+    EventListener: vscode.SymbolKind?.Event ?? 23,
+    Property: vscode.SymbolKind?.Field ?? 7,
+    Enum: vscode.SymbolKind?.Enum ?? 9,
+    EnumMember: vscode.SymbolKind?.EnumMember ?? 21,
+    Tuple: vscode.SymbolKind?.Struct ?? 22,
+    Component: vscode.SymbolKind?.Interface ?? 10,
+    Define: vscode.SymbolKind?.Constant ?? 13,
+    Alias: vscode.SymbolKind?.TypeParameter ?? 25,
+    Import: vscode.SymbolKind?.Module ?? 1,
+  };
+
+  const range = new vscode.Range(
+    new vscode.Position(Math.max(0, (symbol.range?.line ?? 1) - 1), Math.max(0, symbol.range?.column ?? 0)),
+    new vscode.Position(Math.max(0, (symbol.range?.endLine ?? 1) - 1), Math.max(0, symbol.range?.endColumn ?? 0))
+  );
+
+  const selectionRange = new vscode.Range(
+    new vscode.Position(Math.max(0, (symbol.selectionRange?.line ?? 1) - 1), Math.max(0, symbol.selectionRange?.column ?? 0)),
+    new vscode.Position(Math.max(0, (symbol.selectionRange?.endLine ?? 1) - 1), Math.max(0, symbol.selectionRange?.endColumn ?? 0))
+  );
+
+  const vsSymbol = new vscode.DocumentSymbol(
+    symbol.name,
+    symbol.detail ?? "",
+    kindMap[symbol.kind] ?? (vscode.SymbolKind?.Variable ?? 12),
+    range,
+    selectionRange
+  );
+
+  if (symbol.children && symbol.children.length > 0) {
+    vsSymbol.children = symbol.children.map((child) => toVsCodeSymbol(child, vscode));
+  }
+
+  return vsSymbol;
+}
+
 /** Register VS Code UI against the shared core. Exported for host-free tests. */
 function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC_DELAY_MS } = {}) {
   const diagnostics = vscode.languages.createDiagnosticCollection("fcfmt-v5");
@@ -656,6 +697,149 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
     }, {
       providedCodeActionKinds: [vscode.CodeActionKind.SourceOrganizeImports],
     }),
+    vscode.languages.registerDocumentSymbolProvider(selector, {
+      provideDocumentSymbols(document) {
+        if (!isFcDocument(document) || !core?.getFileIndex) return [];
+        const index = core.getFileIndex(document.uri.fsPath, document.getText());
+        if (!index || !index.symbols) return [];
+        return index.symbols.map((sym) => toVsCodeSymbol(sym, vscode));
+      },
+    }),
+    vscode.languages.registerCompletionItemProvider(selector, {
+      provideCompletionItems(document, position) {
+        if (!isFcDocument(document)) return [];
+
+        const lineText = document.lineAt(position).text;
+        const linePrefix = lineText.slice(0, position.character);
+
+        // Pattern 1: Dot-access: <Target>.<Prefix> (e.g. "GridMath.Get" or "GridMath.")
+        const dotMatch = linePrefix.match(/([A-Za-z0-9_]+)\.([A-Za-z0-9_]*)$/);
+        let items = [];
+
+        if (dotMatch && core?.getMemberCompletions) {
+          const target = dotMatch[1];
+          const prefix = dotMatch[2] ?? "";
+          items = core.getMemberCompletions(document.uri.fsPath, document.getText(), target, prefix);
+        } else if (core?.getLocalCompletions) {
+          // Pattern 2: Identifier word mid-way: e.g. "FooB" or "Get"
+          const wordMatch = linePrefix.match(/([A-Za-z0-9_]+)$/);
+          if (wordMatch) {
+            const prefix = wordMatch[1];
+            items = core.getLocalCompletions(document.uri.fsPath, document.getText(), prefix);
+          }
+        }
+
+        if (!items || items.length === 0) {
+          return [];
+        }
+
+        const kindMap = {
+          Function: vscode.CompletionItemKind?.Method ?? 1,
+          EventListener: vscode.CompletionItemKind?.Event ?? 24,
+          Property: vscode.CompletionItemKind?.Field ?? 4,
+          Enum: vscode.CompletionItemKind?.Enum ?? 12,
+          EnumMember: vscode.CompletionItemKind?.EnumMember ?? 19,
+          Tuple: vscode.CompletionItemKind?.Struct ?? 21,
+          Component: vscode.CompletionItemKind?.Interface ?? 7,
+          Define: vscode.CompletionItemKind?.Constant ?? 20,
+          Alias: vscode.CompletionItemKind?.TypeParameter ?? 24,
+          Import: vscode.CompletionItemKind?.Module ?? 8,
+        };
+
+        return items.map((desc, idx) => {
+          const item = new vscode.CompletionItem(
+            desc.label,
+            kindMap[desc.kind] ?? (vscode.CompletionItemKind?.Variable ?? 5)
+          );
+          item.detail = desc.detail;
+          if (desc.docComment && vscode.MarkdownString) {
+            item.documentation = new vscode.MarkdownString(desc.docComment);
+          }
+          if (desc.insertSnippet && vscode.SnippetString) {
+            item.insertText = new vscode.SnippetString(desc.insertSnippet);
+          } else if (desc.insertSnippet) {
+            item.insertText = desc.insertSnippet.replace(/\$\d+/g, "");
+          }
+          // Automatically trigger parameter hints when function completion is accepted
+          if (desc.kind === "Function") {
+            item.command = {
+              command: "editor.action.triggerParameterHints",
+              title: "Trigger Parameter Hints",
+            };
+          }
+          // Prioritize above extension goc keywords with sortText
+          item.sortText = "00_" + idx.toString().padStart(4, "0");
+          return item;
+        });
+      },
+    }, "."),
+    vscode.languages.registerDocumentLinkProvider(selector, {
+      provideDocumentLinks(document) {
+        if (!isFcDocument(document) || !core?.getDocumentLinks) return [];
+        const links = core.getDocumentLinks(document.uri.fsPath, document.getText());
+        return links.map((l) => {
+          const range = new vscode.Range(
+            new vscode.Position(Math.max(0, (l.range?.line ?? 1) - 1), Math.max(0, (l.range?.column ?? 0) + 1)),
+            new vscode.Position(Math.max(0, (l.range?.endLine ?? 1) - 1), Math.max(0, (l.range?.endColumn ?? 0) - 1))
+          );
+          const targetUri = vscode.Uri?.file ? vscode.Uri.file(l.targetFilePath) : { fsPath: l.targetFilePath };
+          const docLink = new vscode.DocumentLink(range, targetUri);
+          docLink.tooltip = "Follow link (Ctrl + Click)";
+          return docLink;
+        });
+      },
+    }),
+    vscode.languages.registerFoldingRangeProvider(selector, {
+      provideFoldingRanges(document) {
+        if (!isFcDocument(document) || !core?.getFoldingRanges) return [];
+        const ranges = core.getFoldingRanges(document.uri.fsPath, document.getText());
+        return ranges.map((r) => {
+          const kind = r.kind === "imports"
+            ? (vscode.FoldingRangeKind?.Imports ?? 1)
+            : r.kind === "comment"
+            ? (vscode.FoldingRangeKind?.Comment ?? 2)
+            : undefined;
+          return new vscode.FoldingRange(r.startLine, r.endLine, kind);
+        });
+      },
+    }),
+    vscode.languages.registerWorkspaceSymbolProvider({
+      provideWorkspaceSymbols(query) {
+        if (!core?.searchWorkspaceSymbols || !query || query.trim().length === 0) return [];
+        const workspaceRoot = vscode.workspace?.workspaceFolders?.[0]?.uri?.fsPath ?? "";
+        if (!workspaceRoot) return [];
+
+        const results = core.searchWorkspaceSymbols(workspaceRoot, query);
+        const kindMap = {
+          Graph: vscode.SymbolKind?.Class ?? 4,
+          Function: vscode.SymbolKind?.Function ?? 11,
+          EventListener: vscode.SymbolKind?.Event ?? 23,
+          Property: vscode.SymbolKind?.Field ?? 7,
+          Enum: vscode.SymbolKind?.Enum ?? 9,
+          EnumMember: vscode.SymbolKind?.EnumMember ?? 21,
+          Tuple: vscode.SymbolKind?.Struct ?? 22,
+          Component: vscode.SymbolKind?.Interface ?? 10,
+          Define: vscode.SymbolKind?.Constant ?? 13,
+          Alias: vscode.SymbolKind?.TypeParameter ?? 25,
+          Import: vscode.SymbolKind?.Module ?? 1,
+        };
+
+        return results.map((r) => {
+          const range = new vscode.Range(
+            new vscode.Position(Math.max(0, (r.range?.line ?? 1) - 1), Math.max(0, r.range?.column ?? 0)),
+            new vscode.Position(Math.max(0, (r.range?.endLine ?? 1) - 1), Math.max(0, r.range?.endColumn ?? 0))
+          );
+          const targetUri = vscode.Uri?.file ? vscode.Uri.file(r.filePath) : { fsPath: r.filePath };
+          const location = new vscode.Location(targetUri, range);
+          return new vscode.SymbolInformation(
+            r.name,
+            kindMap[r.kind] ?? (vscode.SymbolKind?.Variable ?? 12),
+            r.containerName,
+            location
+          );
+        });
+      },
+    }),
     vscode.workspace.registerTextDocumentContentProvider(PREVIEW_SCHEME, {
       provideTextDocumentContent(uri) {
         return virtualDocuments.get(uri.toString()) ?? "";
@@ -683,6 +867,7 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
       timers.clear();
       virtualDocuments.clear();
       clearConfigCache();
+      core?.clearIndexCache?.();
     } },
   );
 
@@ -714,13 +899,15 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
 
 async function activate(context) {
   const vscode = require("vscode");
-  const [service, config, syntax, diff, lint, imports] = await Promise.all([
+  const [service, config, syntax, diff, lint, imports, symbols, indexer] = await Promise.all([
     import("./core/service.mjs"),
     import("./core/config.mjs"),
     import("./core/syntax/parser.mjs"),
     import("./core/diff.mjs"),
     import("./core/lint/engine.mjs"),
     import("./core/imports.mjs"),
+    import("./core/symbols/extractor.mjs"),
+    import("./core/symbols/indexer.mjs"),
   ]);
 
   createExtension(vscode, {
@@ -730,6 +917,16 @@ async function activate(context) {
     computeLineHunks: diff.computeLineHunks,
     lintSource: lint.lintSource,
     organizeImports: imports.organizeImports,
+    extractSymbols: symbols.extractSymbols,
+    getFileIndex: indexer.getFileIndex,
+    getMemberCompletions: indexer.getMemberCompletions,
+    getLocalCompletions: indexer.getLocalCompletions,
+    findDefinition: indexer.findDefinition,
+    clearIndexCache: indexer.clearIndexCache,
+    getFoldingRanges: indexer.getFoldingRanges,
+    getDocumentLinks: indexer.getDocumentLinks,
+    getSignatureHelp: indexer.getSignatureHelp,
+    searchWorkspaceSymbols: indexer.searchWorkspaceSymbols,
   }, context);
 }
 
