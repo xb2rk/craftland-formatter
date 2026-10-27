@@ -292,10 +292,9 @@ class SyntaxPrinter {
 
   /** Collect direct child nodes and uncovered tokens in source order. */
   parts(node, start = node.start, end = node.end) {
-    const isFullNode = start === node.start && end === node.end;
-    const children = isFullNode
-      ? node.children
-      : node.children.filter((child) => child.start >= start && child.end <= end && child.end > child.start);
+    const children = node.children.filter(
+      (child) => child.start >= start && child.end <= end && child.end > child.start
+    );
     const parts = [];
     let childIndex = 0;
     let tokenIndex = firstAtOrAfter(this.tokens, start);
@@ -306,6 +305,11 @@ class SyntaxPrinter {
 
     while (tokenIndex < this.tokens.length && this.tokens[tokenIndex].start < end) {
       const token = this.tokens[tokenIndex];
+
+      while (children[childIndex] && children[childIndex].end <= token.start) {
+        childIndex += 1;
+      }
+
       const child = children[childIndex];
       const range = ignored[ignoredIndex];
 

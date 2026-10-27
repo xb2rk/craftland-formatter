@@ -1,8 +1,8 @@
 {
   "extension": "craftlandstudio.ffugclanguage",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "artifact": "dist/server_syntax.js",
-  "sha256": "fbfe4b87158096a84a9978cb54552b8fe33e24e561807ebee5f2f085463f9367",
+  "sha256": "637270189c05ed16229b41884440d64d8890917be9d94faf54d224bbeb1579f8",
   "parserRuleCount": 124,
   "entries": {
     "fcg": "graphFile",

@@ -356,17 +356,17 @@ export function resolveImportPath(currentFilePath, rawImportPath) {
   // 4. Check Craftland Studio library release folder (system stdlib)
   const home = process.env.USERPROFILE || process.env.HOME || "";
   if (home) {
-    const stdLibDir = path.join(
-      home,
-      ".vscode",
-      "extensions",
+    const candidateFolders = [
+      "craftlandstudio.ffugclanguage-1.11.1",
       "craftlandstudio.ffugclanguage-1.11.0",
-      "library",
-      "release"
-    );
-    const candidate = path.resolve(stdLibDir, path.basename(rawImportPath));
-    if (fs.existsSync(candidate)) {
-      return candidate;
+    ];
+
+    for (const folder of candidateFolders) {
+      const stdLibDir = path.join(home, ".vscode", "extensions", folder, "library", "release");
+      const candidate = path.resolve(stdLibDir, path.basename(rawImportPath));
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
     }
   }
 

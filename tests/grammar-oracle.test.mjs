@@ -8,9 +8,9 @@ import { grammarMetadata, lexWithOracle, loadExtensionOracle, parseWithOracle } 
 
 const importLine = 'import "StdLibrary.fcc" as StdLibrary\n';
 
-test("loads exactly the pinned 1.11.0 parser inventory", () => {
+test("loads exactly the pinned parser inventory", () => {
   const metadata = grammarMetadata();
-  assert.equal(metadata.baseline.version, "1.11.0");
+  assert.equal(metadata.baseline.version, "1.11.1");
   assert.equal(metadata.ruleNames.length, 124);
   assert.equal(metadata.ruleNames[44], "graphFile");
   assert.equal(metadata.ruleNames[123], "eos");

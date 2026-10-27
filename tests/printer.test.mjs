@@ -42,6 +42,13 @@ test("golden graph layout and empty blocks", () => {
   assert.equal(formatSource(result.output, "fcg").output, expected);
 });
 
+test("preserves multiline else blocks with statements", () => {
+  const source = 'import "StdLibrary.fcc" as StdLibrary\n\ngraph Demo {\n  func Test() int {\n    if true {\n      return 1\n    } else {\n      return result\n    }\n  }\n}\n';
+  const result = formatSource(source, "fcg");
+  assert.deepEqual(result.diagnostics, []);
+  assert.equal(result.output, source);
+});
+
 test("width and call role choose grammar-safe closing layout", () => {
   const source = [
     'import "StdLibrary.fcc" as StdLibrary',
