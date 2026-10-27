@@ -24,6 +24,27 @@ export const ARITHMETIC_PRECEDENCE = Object.freeze([
 ]);
 
 /**
+ * Operator binding tiers ordered from lowest precedence (breaks first) to highest (breaks last).
+ * - Tier 0: Logical boolean conjunctions (&&, ||)
+ * - Tier 1: Bitwise OR (|)
+ * - Tier 2: Bitwise XOR (^)
+ * - Tier 3: Bitwise AND (&)
+ * - Tier 4: Additive arithmetic (+, -)
+ * - Tier 5: Multiplicative arithmetic (*, /, %)
+ */
+const OPERATOR_TIERS = Object.freeze({
+  "&&": 0, "||": 0,
+  "|": 1,
+  "^": 2,
+  "&": 3,
+  "+": 4, "-": 4,
+  "*": 5, "/": 5, "%": 5,
+});
+
+/** Sentinel tier representing infinity during minimum-tier search. */
+const INFINITE_TIER = 999;
+
+/**
  * Determine the layout break mode for a sequence of expression parts.
  *
  * If the sequence contains direct top-level logical operators ('&&' or '||'),
@@ -35,18 +56,18 @@ export const ARITHMETIC_PRECEDENCE = Object.freeze([
  * @returns {DocMode}
  */
 export function determineLogicalMode(parts, conditionWrapMode) {
-  const hasLogicalOperator = parts.some((part, index) =>
-    index > 0 &&
-    index < parts.length - 1 &&
-    part.type === "token" &&
-    (part.text === "&&" || part.text === "||")
-  );
+  for (let i = 1; i < parts.length - 1; i++) {
+    const part = parts[i];
+    if (part.type === "token" && (part.text === "&&" || part.text === "||")) {
+      return conditionWrapMode;
+    }
+  }
 
-  return hasLogicalOperator ? conditionWrapMode : "auto";
+  return "auto";
 }
 
 /**
- * Select break opportunities within an expression sequence.
+ * Select break opportunities within an expression sequence using an allocation-free single pass.
  *
  * Distinguishes binary operators from unary signs by verifying the preceding token
  * is not a prefix context (such as an assignment, return, or opening delimiter).
@@ -55,34 +76,48 @@ export function determineLogicalMode(parts, conditionWrapMode) {
  * @returns {number[]} Array of token indices where breaks may occur.
  */
 export function findExpressionBreaks(parts) {
-  // Filter for token parts that are in binary position (not immediately following a prefix context)
-  const binaryCandidates = parts.flatMap((part, index) => {
-    const isBinaryPosition =
-      part.type === "token" &&
-      index > 0 &&
-      index < parts.length - 1 &&
-      !PREFIX_CONTEXTS.has(parts[index - 1].text);
+  let bestTier = INFINITE_TIER;
+  let bestIndices = [];
 
-    return isBinaryPosition ? [{ part, index }] : [];
-  });
+  for (let i = 1; i < parts.length - 1; i++) {
+    const part = parts[i];
+    if (part.type !== "token") {
+      continue;
+    }
 
-  // 1. Highest priority breaks: Logical operators (&&, ||)
-  const logicalOperators = binaryCandidates.filter(({ part }) =>
-    part.text === "&&" || part.text === "||"
-  );
+    const tier = OPERATOR_TIERS[part.text];
+    if (tier === undefined) {
+      continue;
+    }
 
-  if (logicalOperators.length > 0) {
-    return logicalOperators.map(({ index }) => index);
-  }
+    // Skip prefix unary signs (e.g. -x, +y) that follow an assignment or opening paren
+    if (PREFIX_CONTEXTS.has(parts[i - 1].text)) {
+      continue;
+    }
 
-  // 2. Secondary priority breaks: Lowest binding arithmetic operators
-  for (const operatorTier of ARITHMETIC_PRECEDENCE) {
-    const tierMatches = binaryCandidates.filter(({ part }) => operatorTier.has(part.text));
+    if (tier < bestTier) {
+      bestTier = tier;
+      bestIndices = [i];
 
-    if (tierMatches.length > 0) {
-      return tierMatches.map(({ index }) => index);
+      // Early exit optimization: Tier 0 (&&, ||) has the lowest possible precedence.
+      // Scan remaining tokens only for matching Tier 0 operators.
+      if (bestTier === 0) {
+        for (let j = i + 1; j < parts.length - 1; j++) {
+          const next = parts[j];
+          if (
+            next.type === "token" &&
+            (next.text === "&&" || next.text === "||") &&
+            !PREFIX_CONTEXTS.has(parts[j - 1].text)
+          ) {
+            bestIndices.push(j);
+          }
+        }
+        return bestIndices;
+      }
+    } else if (tier === bestTier) {
+      bestIndices.push(i);
     }
   }
 
-  return [];
+  return bestIndices;
 }

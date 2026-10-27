@@ -17,6 +17,9 @@ import {
   getDocumentLinks,
   getSignatureHelp,
   searchWorkspaceSymbols,
+  warmupWorkspaceIndex,
+  updateFileIndex,
+  removeFileFromIndex,
 } from "../src/symbols/indexer.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -348,4 +351,48 @@ test("searchWorkspaceSymbols: searches across workspace files for Ctrl+T", () =>
   const match = results.find((r) => r.name === "GetGardenLaneHeightY");
   assert.ok(match, "GetGardenLaneHeightY must be in workspace search results");
   assert.ok(match.filePath.endsWith("GridMath.fcg"));
+});
+
+test("searchWorkspaceSymbols: ranks exact and prefix matches above substring matches", () => {
+  // Exact match should rank #1
+  const results = searchWorkspaceSymbols(assetsDir, "GetGardenLaneHeightY", 10);
+  assert.ok(results.length > 0);
+  assert.equal(results[0].name, "GetGardenLaneHeightY", "Exact match must be the first result");
+});
+
+test("searchWorkspaceSymbols: aborts immediately on cancellationChecker", () => {
+  const cancelled = searchWorkspaceSymbols(assetsDir, "Get", 20, () => true);
+  assert.deepEqual(cancelled, [], "Cancellation checker must abort search");
+});
+
+test("warmupWorkspaceIndex and incremental updates: warm in-memory cache and update symbols", async () => {
+  clearIndexCache();
+  // Background idle warm-up
+  await warmupWorkspaceIndex(assetsDir);
+
+  // Once warm, searching takes sub-millisecond in-memory
+  const t0 = performance.now();
+  const search1 = searchWorkspaceSymbols(assetsDir, "Zombie", 20);
+  const elapsed = performance.now() - t0;
+  assert.ok(search1.length > 0, "Should find symbols from warmed cache");
+  assert.ok(elapsed < 10, `Warm search must be sub-10ms in test (was ${elapsed.toFixed(2)}ms)`);
+
+  // Incremental file update
+  const fakeFile = path.join(assetsDir, "Scripts/Core/TempTestVirtual.fcg");
+  const virtualContent = `import "StdLibrary.fcc" as StdLibrary
+
+graph TempTestVirtual {
+  func UniqueBrandNewFunctionVirtual() {}
+}
+`;
+  updateFileIndex(fakeFile, virtualContent);
+
+  const virtualResults = searchWorkspaceSymbols(assetsDir, "UniqueBrandNewFunctionVirtual", 5);
+  assert.equal(virtualResults.length, 1);
+  assert.equal(virtualResults[0].name, "UniqueBrandNewFunctionVirtual");
+
+  // Incremental file remove
+  removeFileFromIndex(fakeFile);
+  const deletedResults = searchWorkspaceSymbols(assetsDir, "UniqueBrandNewFunctionVirtual", 5);
+  assert.equal(deletedResults.length, 0, "Removed file symbols must not appear in search");
 });

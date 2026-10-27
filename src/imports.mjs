@@ -10,6 +10,50 @@
 const COMMENTS = new Set(["LINE_COMMENT", "COMMENT"]);
 
 /**
+ * Canonical import classification groups in order of presentation:
+ * - LIBRARY (0): Standard engine/SDK libraries (non-relative paths).
+ * - CONTRACTS (1): Cross-system interface definitions (paths traversing 'Contracts').
+ * - SCRIPTS (2): Relative workspace module imports (../ or ./).
+ */
+export const IMPORT_GROUP = Object.freeze({
+  LIBRARY: 0,
+  CONTRACTS: 1,
+  SCRIPTS: 2,
+});
+
+/**
+ * Pinned sort rank for primary Craftland Studio system libraries within group 0.
+ * "StdLibrary.fcc" must precede "EditorGenLib.fcc" according to compiler conventions.
+ */
+const RESERVED_LIB_ORDER = Object.freeze({
+  "stdlibrary.fcc": 1,
+  "editorgenlib.fcc": 2,
+});
+
+/** Regex matching relative parent directory navigation prefixes (e.g. "../../"). */
+const PARENT_DEPTH_REGEX = /^(?:\.\.\/)+/;
+
+/**
+ * Gets the pinned priority rank for standard library imports.
+ * @param {string} path - Import module path.
+ * @returns {number} Rank (1 for StdLibrary, 2 for EditorGenLib, 0 for other).
+ */
+function getReservedOrder(path) {
+  return RESERVED_LIB_ORDER[path.toLowerCase()] ?? 0;
+}
+
+/**
+ * Measures the directory nesting depth of a relative import path.
+ * Deeper parent paths (e.g. "../../") sort above shallower paths ("../").
+ *
+ * @param {string} path - Relative import path.
+ * @returns {number} Character length of leading parent prefixes.
+ */
+function getParentDepth(path) {
+  return path.match(PARENT_DEPTH_REGEX)?.[0].length ?? 0;
+}
+
+/**
  * Compare two strings lexicographically.
  * @param {string} left
  * @param {string} right
@@ -47,15 +91,15 @@ function normalize(path) {
  */
 function classification(path) {
   if (!/^\.\.?\//.test(path)) {
-    return 0;
+    return IMPORT_GROUP.LIBRARY;
   }
 
   const isContract = path.split("/").some((segment) => segment.toLowerCase() === "contracts");
   if (isContract) {
-    return 1;
+    return IMPORT_GROUP.CONTRACTS;
   }
 
-  return 2;
+  return IMPORT_GROUP.SCRIPTS;
 }
 
 /**
@@ -76,16 +120,14 @@ function compareImports(left, right) {
     return groupDifference;
   }
 
-  if (left.group === 0) {
-    const reservedOrder = (path) => ({ "stdlibrary.fcc": 1, "editorgenlib.fcc": 2 })[path.toLowerCase()] ?? 0;
-    const rankDifference = reservedOrder(left.path) - reservedOrder(right.path);
+  if (left.group === IMPORT_GROUP.LIBRARY) {
+    const rankDifference = getReservedOrder(left.path) - getReservedOrder(right.path);
 
     if (rankDifference !== 0) {
       return rankDifference;
     }
-  } else if (left.group === 2) {
-    const parentDepth = (path) => path.match(/^(?:\.\.\/)+/)?.[0].length ?? 0;
-    const depthDifference = parentDepth(right.path) - parentDepth(left.path);
+  } else if (left.group === IMPORT_GROUP.SCRIPTS) {
+    const depthDifference = getParentDepth(right.path) - getParentDepth(left.path);
 
     if (depthDifference !== 0) {
       return depthDifference;

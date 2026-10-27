@@ -13,6 +13,12 @@ import { concat, text } from "../document.mjs";
 import { columns, render } from "../render.mjs";
 
 /**
+ * Maximum column difference permitted between the shortest and longest identifier or type.
+ * Gaps wider than 30 columns are rejected to prevent excessive whitespace padding in mismatched groups.
+ */
+const MAX_ALIGNMENT_GAP = 30;
+
+/**
  * Align declaration entries in a DeclarationBlock or GraphBlock.
  *
  * @param {object} context
@@ -133,10 +139,16 @@ function alignEnumGroup(group, { getParts, printParts, style, alignedMap }) {
     const nameParts = parts.slice(0, assignIndex);
     const valueParts = parts.slice(assignIndex + 1);
     const nameDoc = printParts(nameParts, "Property");
-    const renderedName = render(nameDoc, style);
+    let nameWidth;
 
-    if (/[\r\n]/.test(renderedName)) {
-      return; // Skip if multiline identifier
+    if (nameParts.length === 1 && nameParts[0].type === "token") {
+      nameWidth = columns(nameParts[0].text);
+    } else {
+      const renderedName = render(nameDoc, style);
+      if (/[\r\n]/.test(renderedName)) {
+        return;
+      }
+      nameWidth = columns(renderedName);
     }
 
     parsedRows.push({
@@ -144,7 +156,7 @@ function alignEnumGroup(group, { getParts, printParts, style, alignedMap }) {
       hasAssign: true,
       nameParts,
       nameDoc,
-      nameWidth: columns(renderedName),
+      nameWidth,
       valueParts,
     });
   }
@@ -159,7 +171,7 @@ function alignEnumGroup(group, { getParts, printParts, style, alignedMap }) {
   const minNameWidth = Math.min(...nameWidths);
 
   // Safety threshold: do not pad excessively wide gaps
-  if (maxNameWidth - minNameWidth > 30) {
+  if (maxNameWidth - minNameWidth > MAX_ALIGNMENT_GAP) {
     return;
   }
 
@@ -205,10 +217,15 @@ function alignFieldGroup(group, { getParts, printParts, style, alignedMap }) {
     const typeParts = declParts.slice(nameIndex + 1);
 
     const nameDoc = printParts(nameParts, "Property");
-    const renderedName = render(nameDoc, style);
-
-    if (/[\r\n]/.test(renderedName)) {
-      return;
+    let nameWidth;
+    if (nameParts[0]?.type === "token") {
+      nameWidth = columns(nameParts[0].text);
+    } else {
+      const renderedName = render(nameDoc, style);
+      if (/[\r\n]/.test(renderedName)) {
+        return;
+      }
+      nameWidth = columns(renderedName);
     }
 
     let typeDoc = null;
@@ -216,11 +233,15 @@ function alignFieldGroup(group, { getParts, printParts, style, alignedMap }) {
 
     if (typeParts.length > 0) {
       typeDoc = printParts(typeParts, "Property");
-      const renderedType = render(typeDoc, style);
-      if (/[\r\n]/.test(renderedType)) {
-        return;
+      if (typeParts.length === 1 && typeParts[0].type === "token") {
+        typeWidth = columns(typeParts[0].text);
+      } else {
+        const renderedType = render(typeDoc, style);
+        if (/[\r\n]/.test(renderedType)) {
+          return;
+        }
+        typeWidth = columns(renderedType);
       }
-      typeWidth = columns(renderedType);
     }
 
     parsedRows.push({
@@ -228,7 +249,7 @@ function alignFieldGroup(group, { getParts, printParts, style, alignedMap }) {
       decoratorParts,
       nameParts,
       nameDoc,
-      nameWidth: columns(renderedName),
+      nameWidth,
       typeParts,
       typeDoc,
       typeWidth,
@@ -242,7 +263,7 @@ function alignFieldGroup(group, { getParts, printParts, style, alignedMap }) {
   const maxNameWidth = Math.max(...nameWidths);
   const minNameWidth = Math.min(...nameWidths);
 
-  if (maxNameWidth - minNameWidth > 30) {
+  if (maxNameWidth - minNameWidth > MAX_ALIGNMENT_GAP) {
     return;
   }
 
@@ -251,7 +272,7 @@ function alignFieldGroup(group, { getParts, printParts, style, alignedMap }) {
   const maxTypeWidth = alignTypes ? Math.max(...typedRows.map((r) => r.typeWidth)) : 0;
   const minTypeWidth = alignTypes ? Math.min(...typedRows.map((r) => r.typeWidth)) : 0;
 
-  if (alignTypes && maxTypeWidth - minTypeWidth > 30) {
+  if (alignTypes && maxTypeWidth - minTypeWidth > MAX_ALIGNMENT_GAP) {
     return;
   }
 

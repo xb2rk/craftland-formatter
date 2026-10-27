@@ -232,3 +232,49 @@ graph TestGraph {
   assert.equal(lintResult.diagnostics[0].severity, "error");
 });
 
+test("lint: no-duplicate-imports flags identical import paths and conflicting aliases", () => {
+  const badSource = `import "Math.fcc" as Math
+import "Math.fcc" as Math2
+import "Other.fcc" as Math
+
+graph TestGraph {
+  func Check() {
+    Math.Abs(1)
+    Math2.Abs(2)
+  }
+}
+`;
+  const { lintResult } = lintSource(badSource);
+  assert.equal(lintResult.errorCount, 2);
+  assert.equal(lintResult.diagnostics.length, 2);
+
+  assert.equal(lintResult.diagnostics[0].ruleId, "no-duplicate-imports");
+  assert.match(lintResult.diagnostics[0].message, /Duplicate import for module "Math\.fcc"/);
+
+  assert.equal(lintResult.diagnostics[1].ruleId, "no-duplicate-imports");
+  assert.match(lintResult.diagnostics[1].message, /Import alias 'Math' is already used/);
+});
+
+test("lint: no-self-assignment flags redundant assignments where both sides are identical", () => {
+  const badSource = `import "Math.fcc" as Math
+
+graph TestGraph {
+  func Check(hero Entity, count int) {
+    count = count
+    hero.health = hero.health
+    Math.Abs(count)
+  }
+}
+`;
+  const { lintResult } = lintSource(badSource);
+  assert.equal(lintResult.errorCount, 2);
+  assert.equal(lintResult.diagnostics.length, 2);
+
+  assert.equal(lintResult.diagnostics[0].ruleId, "no-self-assignment");
+  assert.match(lintResult.diagnostics[0].message, /Assigning 'count' to itself is redundant/);
+
+  assert.equal(lintResult.diagnostics[1].ruleId, "no-self-assignment");
+  assert.match(lintResult.diagnostics[1].message, /Assigning 'hero\.health' to itself is redundant/);
+});
+
+

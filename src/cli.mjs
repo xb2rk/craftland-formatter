@@ -18,6 +18,16 @@ const PATH_OPTIONS = new Map([
   ["--cache-location", "cacheLocation"],
 ]);
 
+/**
+ * Standard POSIX-compliant exit status codes for CLI execution:
+ * - 0 (EXIT_SUCCESS): Execution finished successfully, or `--check` verified code is clean.
+ * - 1 (EXIT_CHECK_DIFF_FOUND): Formatting differences detected in `--check` mode.
+ * - 2 (EXIT_ERROR): Operational, syntactic, configuration, or I/O failure.
+ */
+export const EXIT_SUCCESS = 0;
+export const EXIT_CHECK_DIFF_FOUND = 1;
+export const EXIT_ERROR = 2;
+
 /** The public help uses the same registry as validation and schema generation. */
 export function helpText() {
   const settings = OPTIONS.map((option) =>
@@ -79,7 +89,7 @@ export function parseArgs(argv) {
     const flag = equals < 0 ? argument : argument.slice(0, equals);
     const inline = equals < 0 ? undefined : argument.slice(equals + 1);
 
-    if (["--help", "--version", "--check", "--diff", "--write", "--init", "--no-final-newline", "--cache"].includes(flag)) {
+    if (["--help", "--version", "--check", "--diff", "--write", "--init", "--no-final-newline", "--cache", "--color", "--no-color"].includes(flag)) {
       if (inline !== undefined) {
         throw new ConfigError(`${flag} does not accept a value`);
       }
@@ -88,6 +98,10 @@ export function parseArgs(argv) {
         parsed.cliLeaves.finalNewline = false;
       } else if (flag === "--cache") {
         parsed.cache = true;
+      } else if (flag === "--color") {
+        parsed.color = true;
+      } else if (flag === "--no-color") {
+        parsed.color = false;
       } else {
         parsed[flag.slice(2)] = true;
       }
@@ -321,17 +335,17 @@ export async function runCli(argv) {
     if (parsed.version) {
       const metadata = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"));
       process.stdout.write(metadata.version + "\n");
-      return 0;
+      return EXIT_SUCCESS;
     }
 
     if (parsed.help) {
       process.stdout.write(helpText());
-      return 0;
+      return EXIT_SUCCESS;
     }
 
     if (parsed.init) {
       initConfig(parsed);
-      return 0;
+      return EXIT_SUCCESS;
     }
 
     if (parsed.explainPath) {
@@ -340,7 +354,7 @@ export async function runCli(argv) {
         cliLeaves: nestLeaves(parsed.cliLeaves),
       });
       process.stdout.write(JSON.stringify(config, null, 2) + "\n");
-      return 0;
+      return EXIT_SUCCESS;
     }
 
     if (parsed.stdinPath) {
@@ -351,7 +365,7 @@ export async function runCli(argv) {
       }
 
       process.stdout.write(plan.output);
-      return 0;
+      return EXIT_SUCCESS;
     }
 
     let cache = null;
@@ -406,7 +420,7 @@ export async function runCli(argv) {
         process.stderr.write(`fcfmt: ${error.message}\n`);
       }
 
-      return 2;
+      return EXIT_ERROR;
     }
 
     if (!parsed.check && !parsed.diff && !parsed.write) {
@@ -415,7 +429,7 @@ export async function runCli(argv) {
       }
 
       process.stdout.write(plans[0].output);
-      return 0;
+      return EXIT_SUCCESS;
     }
 
     const changed = plans.filter((plan) => plan.changed);
@@ -439,7 +453,7 @@ export async function runCli(argv) {
         } catch (error) {
           process.stderr.write(`fcfmt: ${plan.path}: write failed: ${error.message}\n`);
           process.stderr.write(`fcfmt: ${written.length} file(s) written before failure\n`);
-          return 2;
+          return EXIT_ERROR;
         }
       }
 
@@ -447,13 +461,15 @@ export async function runCli(argv) {
         cache.save();
       }
 
-      return 0;
+      return EXIT_SUCCESS;
     }
+
+    const useColor = parsed.color ?? (Boolean(process.stdout?.isTTY) && !process.env.NO_COLOR);
 
     for (const plan of changed) {
       if (parsed.diff) {
         const label = relative(process.cwd(), plan.path).split(sep).join("/");
-        process.stdout.write(unifiedDiff(plan.original, plan.output, label));
+        process.stdout.write(unifiedDiff(plan.original, plan.output, label, { color: useColor }));
       } else {
         process.stdout.write(`${plan.path}\n`);
       }
@@ -463,9 +479,9 @@ export async function runCli(argv) {
       cache.save();
     }
 
-    return parsed.check && changed.length > 0 ? 1 : 0;
+    return parsed.check && changed.length > 0 ? EXIT_CHECK_DIFF_FOUND : EXIT_SUCCESS;
   } catch (error) {
     process.stderr.write(`fcfmt: ${error.message}\n`);
-    return 2;
+    return EXIT_ERROR;
   }
 }

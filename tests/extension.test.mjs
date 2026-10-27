@@ -383,7 +383,7 @@ test("extension build copies runtime, schema and user docs without the developme
   const target = join(directory, "dist");
   const files = copyExtensionRuntime(target);
 
-  assert.equal(files.length, 34);
+  assert.equal(files.length, 36);
   assert.equal(fs.existsSync(join(target, "core", "symbols", "extractor.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "symbols", "indexer.mjs")), true);
   assert.equal(fs.existsSync(join(target, "core", "diff.mjs")), true);

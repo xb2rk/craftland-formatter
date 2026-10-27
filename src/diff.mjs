@@ -61,17 +61,48 @@ function sameLine(left, right) {
 }
 
 /**
+ * Standard ANSI terminal escape sequences for syntax-colored diff output.
+ * - Bold: diff file headers (--- a/..., +++ b/...)
+ * - Red: deleted source lines (-)
+ * - Green: added / formatted source lines (+)
+ * - Cyan: unified diff hunk coordinates (@@ -L,C +L,C @@)
+ * - Reset: restore normal terminal styling
+ */
+const ANSI_RESET = "\x1b[0m";
+const ANSI_BOLD = "\x1b[1m";
+const ANSI_RED = "\x1b[31m";
+const ANSI_GREEN = "\x1b[32m";
+const ANSI_CYAN = "\x1b[36m";
+
+/** Standard git context lines included before and after each changed hunk. */
+const CONTEXT_LINE_COUNT = 3;
+
+/**
  * Format a diff line with its action prefix (' ', '-', '+') and EOL representation.
  *
  * @param {" " | "-" | "+"} prefix
  * @param {SourceLine} line
+ * @param {boolean} [useColor=false]
  * @returns {string}
  */
-function renderLine(prefix, line) {
+function renderLine(prefix, line, useColor = false) {
   const visibleReturn = line.ending.startsWith("\r") ? "\r" : "";
   const missingNewline = line.ending ? "" : "\\ No newline at end of file\n";
+  const raw = `${prefix}${line.text}${visibleReturn}\n${missingNewline}`;
 
-  return `${prefix}${line.text}${visibleReturn}\n${missingNewline}`;
+  if (!useColor) {
+    return raw;
+  }
+
+  if (prefix === "-") {
+    return `${ANSI_RED}${raw}${ANSI_RESET}`;
+  }
+
+  if (prefix === "+") {
+    return `${ANSI_GREEN}${raw}${ANSI_RESET}`;
+  }
+
+  return raw;
 }
 
 /**
@@ -80,13 +111,15 @@ function renderLine(prefix, line) {
  * @param {string} before - Original source code.
  * @param {string} after - Formatted source code.
  * @param {string} path - Display relative file path.
+ * @param {{ color?: boolean }} [options] - Output formatting options.
  * @returns {string} Unified diff string, or empty string if inputs are identical.
  */
-export function unifiedDiff(before, after, path) {
+export function unifiedDiff(before, after, path, options = {}) {
   if (before === after) {
     return "";
   }
 
+  const useColor = options.color ?? false;
   const oldLines = linesOf(before);
   const newLines = linesOf(after);
 
@@ -107,49 +140,54 @@ export function unifiedDiff(before, after, path) {
   }
 
   // 3. Compute 3-line context boundaries
-  const contextBefore = Math.max(0, prefix - 3);
+  const contextBefore = Math.max(0, prefix - CONTEXT_LINE_COUNT);
   const oldChangedEnd = oldLines.length - suffix;
   const newChangedEnd = newLines.length - suffix;
-  const contextAfter = Math.min(3, suffix);
+  const contextAfter = Math.min(CONTEXT_LINE_COUNT, suffix);
 
   const oldEnd = oldChangedEnd + contextAfter;
   const newEnd = newChangedEnd + contextAfter;
 
+  const headerOld = `--- a/${path}\n`;
+  const headerNew = `+++ b/${path}\n`;
+  const hunkRange = `@@ -${contextBefore + 1},${oldEnd - contextBefore} +${contextBefore + 1},${newEnd - contextBefore} @@\n`;
+
   const output = [
-    `--- a/${path}\n`,
-    `+++ b/${path}\n`,
-    `@@ -${contextBefore + 1},${oldEnd - contextBefore} +${contextBefore + 1},${newEnd - contextBefore} @@\n`,
+    useColor ? `${ANSI_BOLD}${headerOld}${ANSI_RESET}` : headerOld,
+    useColor ? `${ANSI_BOLD}${headerNew}${ANSI_RESET}` : headerNew,
+    useColor ? `${ANSI_CYAN}${hunkRange}${ANSI_RESET}` : hunkRange,
   ];
 
   // Leading context
   for (let index = contextBefore; index < prefix; index += 1) {
-    output.push(renderLine(" ", oldLines[index]));
+    output.push(renderLine(" ", oldLines[index], useColor));
   }
 
   // Deleted lines
   for (let index = prefix; index < oldChangedEnd; index += 1) {
-    output.push(renderLine("-", oldLines[index]));
+    output.push(renderLine("-", oldLines[index], useColor));
   }
 
   // Added lines
   for (let index = prefix; index < newChangedEnd; index += 1) {
-    output.push(renderLine("+", newLines[index]));
+    output.push(renderLine("+", newLines[index], useColor));
   }
 
   // Trailing context
   for (let index = 0; index < contextAfter; index += 1) {
-    output.push(renderLine(" ", oldLines[oldChangedEnd + index]));
+    output.push(renderLine(" ", oldLines[oldChangedEnd + index], useColor));
   }
 
   return output.join("");
 }
 
 /**
- * Executes Myers diff algorithm on two line arrays and returns matched line coordinates.
+ * Executes Myers' O(ND) difference algorithm on two line arrays.
+ * Traverses edit graph diagonals to find the shortest edit script (SES).
  *
  * @param {SourceLine[]} a - Original line slice.
  * @param {SourceLine[]} b - Formatted line slice.
- * @returns {Array<{ oldIndex: number, newIndex: number }>}
+ * @returns {Array<{ oldIndex: number, newIndex: number }>} Matched line coordinates.
  */
 function myersMatches(a, b) {
   const N = a.length;
@@ -160,6 +198,7 @@ function myersMatches(a, b) {
     return [];
   }
 
+  // Offset array to center diagonal index k in [-max, max] at index [0, 2*max]
   const offset = max;
   const v = new Int32Array(2 * max + 1);
   const trace = [];
@@ -170,6 +209,7 @@ function myersMatches(a, b) {
   for (let d = 0; d <= max; d += 1) {
     trace.push(new Int32Array(v));
 
+    // Iterate diagonals k from -d to d in steps of 2
     for (let k = -d; k <= d; k += 2) {
       let x;
 

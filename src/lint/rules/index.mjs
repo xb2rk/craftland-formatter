@@ -4,19 +4,23 @@
 
 import { noAssignmentInCondition } from "./no-assignment-in-condition.mjs";
 import { noSelfCompare } from "./no-self-compare.mjs";
+import { noSelfAssignment } from "./no-self-assignment.mjs";
 import { noEmptyBlock } from "./no-empty-block.mjs";
 import { noUnreachableCode } from "./no-unreachable-code.mjs";
 import { noZeroStepForLoop } from "./no-zero-step-for-loop.mjs";
 import { noUnusedImports } from "./no-unused-imports.mjs";
+import { noDuplicateImports } from "./no-duplicate-imports.mjs";
 
 /** @type {readonly import("../../types/lint.js").LintRule[]} */
 export const BUILTIN_RULES = [
   noAssignmentInCondition,
   noSelfCompare,
+  noSelfAssignment,
   noEmptyBlock,
   noUnreachableCode,
   noZeroStepForLoop,
   noUnusedImports,
+  noDuplicateImports,
 ];
 
 /** @type {ReadonlyMap<string, import("../../types/lint.js").LintRule>} */

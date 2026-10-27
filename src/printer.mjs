@@ -25,7 +25,7 @@ import { parseSource } from "./syntax/parser.mjs";
 import { lexSource } from "./syntax/lexer.mjs";
 import { ASSIGNMENT_OPERATORS, BINARY_OPERATORS, PREFIX_CONTEXTS } from "./syntax/operators.mjs";
 import { defaultLeaves, printerOptions } from "./config-registry.mjs";
-import { concat, group, hardline, ifBreak, indent, line, softline, text, verbatim } from "./document.mjs";
+import { concat, emptyText, group, hardline, ifBreak, indent, line, softline, spaceText, text, verbatim } from "./document.mjs";
 import { columns, render } from "./render.mjs";
 import { collectPragmas } from "./pragmas.mjs";
 import { organizeImports } from "./imports.mjs";
@@ -48,6 +48,12 @@ const GROUP_NODES = new Set([
 ]);
 const BLOCK_NODES = new Set(["GraphBlock", "CodeBlock", "DeclarationBlock"]);
 const COMMENTS = new Set(["LINE_COMMENT", "COMMENT"]);
+
+const PREFIX_SIGNS = new Set(["-", "+", "~"]);
+const ASSIGN_SIGNS = new Set(["=", ":="]);
+const INFIX_WORDS = new Set(["as", "in"]);
+const PAREN_LEFT_SIGNS = new Set(["!", "~", "(", "[", "."]);
+const GROUP_LEFT_EXCLUSIONS = new Set(["=", ":=", "return", "var"]);
 
 /** @param {string} source @param {FormatterOptions} requested */
 function resolveStyle(source, requested) {
@@ -121,12 +127,23 @@ function resolveStyle(source, requested) {
   return { ...style, eol };
 }
 
-/** @param {Token[]} tokens @param {number} offset */
+/** ASCII character codes for newline recognition without substring allocations. */
+const CHAR_LF = 10; // '\n' Line Feed
+const CHAR_CR = 13; // '\r' Carriage Return
+
+/**
+ * Binary search for the first token whose start offset is at or after the given offset.
+ *
+ * @param {Token[]} tokens - Sorted array of tokens.
+ * @param {number} offset - Target character offset.
+ * @returns {number} Index of the first matching token, or `tokens.length` if none.
+ */
 function firstAtOrAfter(tokens, offset) {
   let low = 0;
   let high = tokens.length;
 
   while (low < high) {
+    // Zero-fill right shift acts as fast integer division by 2 that prevents 32-bit signed overflow
     const middle = (low + high) >>> 1;
 
     if (tokens[middle].start < offset) {
@@ -137,6 +154,86 @@ function firstAtOrAfter(tokens, offset) {
   }
 
   return low;
+}
+
+/**
+ * Checks whether the source contains any line breaks (CR or LF) within character range [start, end).
+ * Scans character codes directly on the source string to avoid allocating temporary substrings.
+ *
+ * @param {string} source - Original file source string.
+ * @param {number} start - Start character offset (inclusive).
+ * @param {number} end - End character offset (exclusive).
+ * @returns {boolean} True if a newline character exists in the range.
+ */
+function hasLineBreakInRange(source, start, end) {
+  for (let i = start; i < end; i++) {
+    const code = source.charCodeAt(i);
+    if (code === CHAR_LF || code === CHAR_CR) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Counts source blank lines between [start, end) without regex or string allocations.
+ * An isolated single newline terminates the preceding line; two or more newlines produce blank lines.
+ *
+ * @param {string} source - Original file source string.
+ * @param {number} start - Start character offset (inclusive).
+ * @param {number} end - End character offset (exclusive).
+ * @returns {number} Number of blank lines (0 or more).
+ */
+function countBlanksInRange(source, start, end) {
+  let lines = 0;
+
+  for (let i = start; i < end; i++) {
+    const ch = source.charCodeAt(i);
+
+    if (ch === CHAR_LF) {
+      lines += 1;
+    } else if (ch === CHAR_CR) {
+      lines += 1;
+      // Skip the '\n' in a CRLF sequence so it is counted as a single logical line break
+      if (i + 1 < end && source.charCodeAt(i + 1) === CHAR_LF) {
+        i += 1;
+      }
+    }
+  }
+
+  return lines > 1 ? lines - 1 : 0;
+}
+
+/**
+ * Finds the first and last syntax tokens within [start, end) using O(log N) binary search.
+ * Only inspects the tokens belonging to the node's interval rather than scanning the entire file.
+ *
+ * @param {Token[]} tokens - Full sorted token stream of the file.
+ * @param {number} start - Node start offset.
+ * @param {number} end - Node end offset.
+ * @returns {{ open: Token | null, close: Token | null }}
+ */
+function syntaxBoundaryTokens(tokens, start, end) {
+  const startIndex = firstAtOrAfter(tokens, start);
+  let open = null;
+  let close = null;
+
+  for (let i = startIndex; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.start >= end) {
+      break;
+    }
+
+    if (token.channel === "syntax") {
+      if (!open) {
+        open = token;
+      }
+      close = token;
+    }
+  }
+
+  return { open, close };
 }
 
 /** @param {Token} token */
@@ -171,11 +268,7 @@ function stableTokens(tree, options = {}) {
     if (options.canonicalHeaders && node.kind === "Condition") {
       const parenChild = node.children.find((c) => c.kind === "Parenthesized");
       if (parenChild && node.children.length === 1) {
-        const parenSyntax = tree.tokens.filter(
-          (t) => t.channel === "syntax" && t.start >= parenChild.start && t.end <= parenChild.end
-        );
-        const open = parenSyntax[0];
-        const close = parenSyntax.at(-1);
+        const { open, close } = syntaxBoundaryTokens(tree.tokens, parenChild.start, parenChild.end);
         if (open?.text === "(" && close?.text === ")") {
           optionalTokens.add(open.start);
           optionalTokens.add(close.start);
@@ -199,11 +292,16 @@ class SyntaxPrinter {
 
   /** Collect direct child nodes and uncovered tokens in source order. */
   parts(node, start = node.start, end = node.end) {
-    const children = node.children.filter((child) => child.start >= start && child.end <= end && child.end > child.start);
+    const isFullNode = start === node.start && end === node.end;
+    const children = isFullNode
+      ? node.children
+      : node.children.filter((child) => child.start >= start && child.end <= end && child.end > child.start);
     const parts = [];
     let childIndex = 0;
     let tokenIndex = firstAtOrAfter(this.tokens, start);
-    const ignored = this.ignored.filter(range => range.start >= start && range.end <= end);
+    const ignored = this.ignored.length === 0
+      ? []
+      : this.ignored.filter((range) => range.start >= start && range.end <= end);
     let ignoredIndex = 0;
 
     while (tokenIndex < this.tokens.length && this.tokens[tokenIndex].start < end) {
@@ -256,11 +354,7 @@ class SyntaxPrinter {
     if (node.kind === "Condition" && this.style.syntax?.canonicalHeaders === "canonical") {
       const parenChild = node.children.find((c) => c.kind === "Parenthesized");
       if (parenChild && node.children.length === 1) {
-        const parenSyntax = this.tokens.filter(
-          (t) => t.channel === "syntax" && t.start >= parenChild.start && t.end <= parenChild.end
-        );
-        const open = parenSyntax[0];
-        const close = parenSyntax.at(-1);
+        const { open, close } = syntaxBoundaryTokens(this.tokens, parenChild.start, parenChild.end);
         if (open?.text === "(" && close?.text === ")") {
           const interior = this.parts(parenChild, open.end, close.start);
           return group(this.printParts(interior, "Condition"), this.logicalMode(interior));
@@ -281,24 +375,35 @@ class SyntaxPrinter {
       return this.print(part.node);
     }
 
-    return COMMENTS.has(part.token.kind) || /[\r\n]/.test(part.text)
+    return COMMENTS.has(part.token.kind) || part.token.line !== part.token.endLine
       ? verbatim(part.text)
       : text(part.text);
   }
 
-  /** Whitespace between syntax atoms is chosen from their grammatical roles. */
+  /**
+   * Selects appropriate whitespace between adjacent syntax atoms based on grammatical roles.
+   *
+   * @param {ReturnType<typeof tokenPart> | ReturnType<typeof nodePart>} previous - Preceding atom.
+   * @param {ReturnType<typeof tokenPart> | ReturnType<typeof nodePart>} current - Succeeding atom.
+   * @param {string} owner - Enclosing AST node kind.
+   * @param {ReturnType<typeof tokenPart> | ReturnType<typeof nodePart>} [beforePrevious] - Two tokens back.
+   * @returns {Doc} Doc element representing whitespace between atoms.
+   */
   separator(previous, current, owner, beforePrevious) {
-    const gap = this.source.slice(previous.end, current.start);
-    const hadBreak = /[\r\n]/.test(gap);
+    const hadBreak = hasLineBreakInRange(this.source, previous.end, current.start);
     const prevComment = previous.type === "token" && COMMENTS.has(previous.token.kind);
     const nextComment = current.type === "token" && COMMENTS.has(current.token.kind);
 
-    if (previous.type === "ignored" || current.type === "ignored") return hadBreak ? hardline : text(" ");
-
-    if (prevComment || nextComment) {
-      return previous.token?.kind === "LINE_COMMENT" || hadBreak ? hardline : text(" ");
+    // 1. Ignored code regions and comments
+    if (previous.type === "ignored" || current.type === "ignored") {
+      return hadBreak ? hardline : spaceText;
     }
 
+    if (prevComment || nextComment) {
+      return previous.token?.kind === "LINE_COMMENT" || hadBreak ? hardline : spaceText;
+    }
+
+    // 2. Decorators and user-preserved line breaks
     if (previous.node?.kind === "Decorator") {
       return hardline;
     }
@@ -310,66 +415,69 @@ class SyntaxPrinter {
     const left = previous.text;
     const right = current.text;
 
-    // Shift operands are two angle tokens even when separated by whitespace.
-    // Type delimiters are child nodes and never reach this token-pair rule.
-    if (left === "<" && right === "<" || left === ">" && right === ">") {
-      return text("");
+    // 3. Shift operators: two adjacent angle brackets must stay glued
+    if ((left === "<" && right === "<") || (left === ">" && right === ">")) {
+      return emptyText;
     }
 
-    // Prefix signs bind to their operand; binary signs keep their separator.
-    if (["-", "+", "~"].includes(left) &&
+    // 4. Prefix unary signs bind tightly to operand; binary signs keep normal spacing
+    if (PREFIX_SIGNS.has(left) &&
         (!beforePrevious || PREFIX_CONTEXTS.has(beforePrevious.text))) {
-      // Repeated unary signs must not merge into a postfix update token.
+      // Repeated unary signs (e.g. - -x or + +x) must not merge into postfix update tokens (-- / ++)
       return text((left === "+" || left === "-") && left === right ? " " : "");
     }
 
+    // 5. Commas and logical junctions (&&, ||)
     if (left === "," && this.style.spacing.comma === "compact") {
-      return text("");
+      return emptyText;
     }
 
     if (left === "&&" || left === "||") {
       return this.style.spacing.operators === "compact" ? softline : line;
     }
 
-    const assignment = ["=", ":="].includes(left) || ["=", ":="].includes(right);
+    // 6. Assignment and binary infix operators
+    const assignment = ASSIGN_SIGNS.has(left) || ASSIGN_SIGNS.has(right);
     const operator = BINARY_OPERATORS.has(left) || BINARY_OPERATORS.has(right) ||
       ASSIGNMENT_OPERATORS.has(left) || ASSIGNMENT_OPERATORS.has(right);
     const spacing = assignment && this.style.spacing.assignment !== "inherit"
       ? this.style.spacing.assignment : this.style.spacing.operators;
+
     if (operator) {
-      const mandatory = ["as", "in"].includes(left) || ["as", "in"].includes(right) ||
-        ["+", "-"].includes(left) && left === right;
+      const mandatory = INFIX_WORDS.has(left) || INFIX_WORDS.has(right) ||
+        ((left === "+" || left === "-") && left === right);
       return text(spacing === "compact" && !mandatory ? "" : " ");
     }
 
+    // 7. Blocks, grouped expressions, and delimiters
     if (current.node && BLOCK_NODES.has(current.node.kind)) {
-      return text(" ");
+      return spaceText;
     }
 
     if (current.node?.kind === "Parenthesized") {
-      return ["!", "~", "(", "[", "."].includes(left) ? text("") : text(" ");
+      return PAREN_LEFT_SIGNS.has(left) ? emptyText : spaceText;
     }
 
     if (current.node && GROUP_NODES.has(current.node.kind) &&
-        !["Decorator"].includes(current.node.kind) &&
-        !["=", ":=", "return", "var"].includes(left)) {
-      return text("");
+        current.node.kind !== "Decorator" &&
+        !GROUP_LEFT_EXCLUSIONS.has(left)) {
+      return emptyText;
     }
 
     if (right === "," || right === ";" || right === "." || right === ":" ||
         right === ")" || right === "]" || right === "}") {
-      return text("");
+      return emptyText;
     }
 
     if (left === "." || left === "(" || left === "[" || left === "!") {
-      return text("");
+      return emptyText;
     }
 
     if (left === "++" || left === "--" || right === "++" || right === "--") {
-      return text("");
+      return emptyText;
     }
 
-    return text(" ");
+    return spaceText;
   }
 
   /**
@@ -399,7 +507,8 @@ class SyntaxPrinter {
     const docs = [];
     let start = 0;
 
-    for (const end of [...breaks.map((index) => index + 1), parts.length]) {
+    for (let i = 0; i <= breaks.length; i += 1) {
+      const end = i < breaks.length ? breaks[i] + 1 : parts.length;
       const operand = parts.slice(start, end);
 
       if (start > 0) {
@@ -474,10 +583,8 @@ class SyntaxPrinter {
 
   /** @param {SyntaxNode} node */
   printBlock(node) {
-    const syntax = this.tokens.filter((token) => token.channel === "syntax" &&
-      token.start >= node.start && token.end <= node.end);
-    const open = syntax[0];
-    const close = syntax.at(-1);
+    const { open, close } = syntaxBoundaryTokens(this.tokens, node.start, node.end);
+    if (!open || !close) return text("{}");
     const entries = this.parts(node, open.end, close.start);
 
     if (entries.length === 0) {
@@ -506,15 +613,15 @@ class SyntaxPrinter {
 
     for (const entry of entries) {
       if (previous) {
-        const gap = this.source.slice(previous.end, entry.start);
-        const trailingComment = entry.token && COMMENTS.has(entry.token.kind) && !/[\r\n]/.test(gap);
+        const trailingComment = entry.token && COMMENTS.has(entry.token.kind) &&
+          !hasLineBreakInRange(this.source, previous.end, entry.start);
 
         if (trailingComment) {
           docs.push(text("  "));
         } else {
           docs.push(hardline);
 
-          const sourceBlanks = Math.max(0, (gap.match(/\r\n|\r|\n/g) ?? []).length - 1);
+          const sourceBlanks = countBlanksInRange(this.source, previous.end, entry.start);
           const importBoundary = owner === "File" && previous.node?.kind === "Import" &&
             entry.node && entry.node.kind !== "Import";
           const isFuncBoundary = owner === "GraphBlock" && (
@@ -545,19 +652,36 @@ class SyntaxPrinter {
 
   /** @param {SyntaxNode} node */
   printGroup(node) {
-    const syntax = this.tokens.filter((token) => token.channel === "syntax" &&
-      token.start >= node.start && token.end <= node.end);
-    const open = syntax[0];
-    const close = syntax.at(-1);
-    const original = this.source.slice(node.start, node.end);
-    const tokens = this.tokens.filter(token => token.start >= node.start && token.end <= node.end);
-    const hasComments = tokens.some(token => COMMENTS.has(token.kind));
-    const protectedToken = tokens.some(token => token.kind.endsWith("_LIT") && /[\r\n]/.test(token.text)) ||
-      hasComments && node.kind !== "Collection" ||
-      this.ignored.some(range => range.start < node.end && range.end > node.start);
+    const startIndex = firstAtOrAfter(this.tokens, node.start);
+    let open = null;
+    let close = null;
+    let hasComments = false;
+    let hasMultilineLit = false;
 
-    if (protectedToken || this.style.lineBreaks === "preserve" && /[\r\n]/.test(original)) {
-      return verbatim(original);
+    for (let i = startIndex; i < this.tokens.length; i++) {
+      const token = this.tokens[i];
+      if (token.start >= node.end) break;
+      if (token.channel === "syntax") {
+        if (!open) open = token;
+        close = token;
+      } else if (COMMENTS.has(token.kind)) {
+        hasComments = true;
+      }
+      if (token.kind.endsWith("_LIT") && token.line !== token.endLine) {
+        hasMultilineLit = true;
+      }
+    }
+
+    if (!open || !close) return text("");
+
+    const hasIgnored = this.ignored.length > 0 &&
+      this.ignored.some(range => range.start < node.end && range.end > node.start);
+    const protectedToken = hasMultilineLit ||
+      (hasComments && node.kind !== "Collection") ||
+      hasIgnored;
+
+    if (protectedToken || (this.style.lineBreaks === "preserve" && hasLineBreakInRange(this.source, node.start, node.end))) {
+      return verbatim(this.source.slice(node.start, node.end));
     }
 
     const interior = this.parts(node, open.end, close.start);
@@ -611,7 +735,7 @@ class SyntaxPrinter {
     const padding = node.kind === "Collection" && this.style.spacing.brackets === "spaced" ? line : softline;
     const content = concat(padding, ...separated, trailingAllowed ? ifBreak(text(",")) : text(""));
     const closing = trailingAllowed ? ifBreak(hardline, padding) : text("");
-    const hasSourceBreak = /[\r\n]/.test(this.source.slice(open.end, close.start));
+    const hasSourceBreak = hasLineBreakInRange(this.source, open.end, close.start);
     const callMode = this.style.wrap.calls === "preserve" ? (hasSourceBreak ? "always" : "never") : this.style.wrap.calls;
     let collectionMode = this.style.wrap.collections;
     if (this.style.wrap.collections === "preserve") {
@@ -630,8 +754,7 @@ class SyntaxPrinter {
 
   /** A mandatory boundary plus capped source blank lines, measured between exact token spans. */
   sourceBreak(start, end) {
-    const gap = this.source.slice(start, end);
-    const blanks = Math.max(0, (gap.match(/\r\n|\r|\n/g) ?? []).length - 1);
+    const blanks = countBlanksInRange(this.source, start, end);
     return concat(hardline, ...Array(Math.min(blanks, this.style.blankLines.maxConsecutive)).fill(hardline));
   }
 
@@ -643,8 +766,7 @@ class SyntaxPrinter {
     let hasDirectBreak = false;
 
     for (const part of interior) {
-      const gap = this.source.slice(previous.end, part.start);
-      const hadBreak = /[\r\n]/.test(gap);
+      const hadBreak = hasLineBreakInRange(this.source, previous.end, part.start);
       hasDirectBreak ||= hadBreak;
       docs.push(hadBreak ? this.sourceBreak(previous.end, part.start) :
         this.separator(previous, part, node.kind, beforePrevious), this.printPart(part));
@@ -652,7 +774,7 @@ class SyntaxPrinter {
       previous = part;
     }
 
-    const closing = /[\r\n]/.test(this.source.slice(previous.end, close.start))
+    const closing = hasLineBreakInRange(this.source, previous.end, close.start)
       ? this.sourceBreak(previous.end, close.start) : text("");
     // `never` suppresses width-driven breaks; hard source boundaries still win.
     const content = concat(...docs);
@@ -680,7 +802,7 @@ class SyntaxPrinter {
         row = { parts: [], leading: [], trailing: [] };
         boundary = part.end;
       } else if (part.type === "token" && COMMENTS.has(part.token.kind) && !row.parts.length) {
-        if (rows.length > 0 && boundary !== undefined && !/[\r\n]/.test(this.source.slice(boundary, part.start))) {
+        if (rows.length > 0 && boundary !== undefined && !hasLineBreakInRange(this.source, boundary, part.start)) {
           rows.at(-1).trailing.push(part);
           boundary = part.end;
         } else {

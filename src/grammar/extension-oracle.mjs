@@ -13,6 +13,12 @@ import { dirname, join, resolve } from "node:path";
 const baseline = JSON.parse(readFileSync(new URL("../../grammar/baseline.json", import.meta.url), "utf8"));
 const cache = new Map();
 
+/** Webpack module ID for the entry chunk in Craftland extension bundle 1.11.0. */
+const WEBPACK_ENTRY_MODULE_ID = 8762;
+
+/** ANTLR EOF token type indicator (-1). */
+const ANTLR_EOF_TYPE = -1;
+
 /** Find the exact pinned bundle, with an explicit path taking precedence. */
 export function locateSyntaxBundle(explicitPath) {
   const selected = explicitPath ?? process.env.FC_GRAMMAR_BUNDLE;
@@ -83,7 +89,9 @@ export function loadExtensionOracle(explicitPath) {
     return name + ": __webpack_require__(" + id + ")." + name;
   });
 
-  const entryPattern = /__webpack_require__\(8762\);[\s\S]*?module\.exports = __webpack_exports__;/;
+  const entryPattern = new RegExp(
+    `__webpack_require__\\(${WEBPACK_ENTRY_MODULE_ID}\\);[\\s\\S]*?module\\.exports = __webpack_exports__;`
+  );
 
   if (!entryPattern.test(source)) {
     throw new Error("Pinned Craftland bundle entry shape is not recognized.");
@@ -136,7 +144,7 @@ export function lexWithOracle(source, explicitPath) {
       end: token.stopIndex + 1,
     });
 
-    if (token.type === -1) {
+    if (token.type === ANTLR_EOF_TYPE) {
       break;
     }
   }
@@ -177,7 +185,7 @@ export function parseWithOracle(source, kind, explicitPath) {
 
   tokens.fill();
 
-  const reachedEof = parser.currentToken?.type === -1;
+  const reachedEof = parser.currentToken?.type === ANTLR_EOF_TYPE;
 
   return {
     accepted: errors.length === 0 && reachedEof,

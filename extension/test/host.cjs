@@ -21,7 +21,8 @@ const compact = [
 ].join("\n");
 
 async function run() {
-  const extension = vscode.extensions.getExtension("fc-format.fc-format-v5-vscode");
+  const extension = vscode.extensions.getExtension("craftland-community.fc-format-v5-vscode") ??
+    vscode.extensions.getExtension("fc-format.fc-format-v5-vscode");
   assert.ok(extension, "FC Format v5 extension was not loaded");
   await extension.activate();
 

@@ -1,33 +1,81 @@
 /** @typedef {import("./document.mjs").Doc} Doc */
 
+const UNICODE_MARK_REGEX = /\p{Mark}/u;
+
+/** Precomputed indent string cache by indent unit. */
+const INDENT_CACHE = new Map();
+function getIndentString(unit, depth) {
+  let list = INDENT_CACHE.get(unit);
+  if (!list) {
+    list = [""];
+    INDENT_CACHE.set(unit, list);
+  }
+  while (list.length <= depth) {
+    list.push(unit.repeat(list.length));
+  }
+  return list[depth];
+}
+
+/** ASCII Horizontal Tab character code. */
+const CHAR_TAB = 9;
+
+/** Unicode Surrogate code unit bounds for 4-byte UTF-16 code points (emojis, rare scripts). */
+const SURROGATE_HIGH_MIN = 0xd800;
+const SURROGATE_HIGH_MAX = 0xdbff;
+
+/** Unicode Emoji presentation code point bounds. */
+const EMOJI_MIN = 0x1f300;
+const EMOJI_MAX = 0x1faff;
+
 /**
- * Count displayed columns. Tabs use a configured stop, combining marks use no
- * column, and common CJK/emoji code points use two. Protected text is never
- * split, even when it extends past printWidth.
+ * Counts displayed visual columns for a string.
+ * - Standard ASCII printable characters (0x20 - 0x7E) occupy 1 column.
+ * - Tab characters advance to the next tab stop.
+ * - Unicode combining marks occupy 0 columns.
+ * - East Asian Wide (CJK ideographs, Hangul) and Emoji code points occupy 2 columns.
+ *
+ * @param {string} value - Text to measure.
+ * @param {number} [start=0] - Starting column offset.
+ * @param {number} [tabWidth=4] - Tab stop width in spaces.
+ * @returns {number} Final visual column position.
  */
 export function columns(value, start = 0, tabWidth = 4) {
   let column = start;
+  const len = value.length;
 
-  for (const character of value) {
-    const code = character.charCodeAt(0);
+  for (let i = 0; i < len; i += 1) {
+    const code = value.charCodeAt(i);
 
+    // Fast path: standard printable ASCII characters occupy exactly 1 visual column
     if (code >= 0x20 && code <= 0x7e) {
       column += 1;
       continue;
     }
 
-    if (character === "\t") {
+    if (code === CHAR_TAB) {
       column += tabWidth - (column % tabWidth);
-    } else if (/\p{Mark}/u.test(character)) {
-      continue;
+    } else if (code >= SURROGATE_HIGH_MIN && code <= SURROGATE_HIGH_MAX && i + 1 < len) {
+      // Decode 4-byte surrogate pair (e.g. Emoji symbols)
+      const fullCode = value.codePointAt(i);
+      i += 1;
+      const wide = fullCode >= EMOJI_MIN && fullCode <= EMOJI_MAX;
+      column += wide ? 2 : 1;
     } else {
-      const fullCode = character.codePointAt(0);
-      const wide = fullCode >= 0x1100 && (
-        fullCode <= 0x115f || fullCode >= 0x2329 && fullCode <= 0x232a ||
-        fullCode >= 0x2e80 && fullCode <= 0xa4cf || fullCode >= 0xac00 && fullCode <= 0xd7a3 ||
-        fullCode >= 0xf900 && fullCode <= 0xfaff || fullCode >= 0xfe10 && fullCode <= 0xfe6f ||
-        fullCode >= 0xff00 && fullCode <= 0xff60 || fullCode >= 0xffe0 && fullCode <= 0xffe6 ||
-        fullCode >= 0x1f300 && fullCode <= 0x1faff
+      const character = value[i];
+      if (UNICODE_MARK_REGEX.test(character)) {
+        continue;
+      }
+
+      // Check East Asian Wide (CJK) ranges: Hangul, Han ideographs, fullwidth forms
+      const wide = code >= 0x1100 && (
+        code <= 0x115f ||
+        (code >= 0x2329 && code <= 0x232a) ||
+        (code >= 0x2e80 && code <= 0xa4cf) ||
+        (code >= 0xac00 && code <= 0xd7a3) ||
+        (code >= 0xf900 && code <= 0xfaff) ||
+        (code >= 0xfe10 && code <= 0xfe6f) ||
+        (code >= 0xff00 && code <= 0xff60) ||
+        (code >= 0xffe0 && code <= 0xffe6)
       );
 
       column += wide ? 2 : 1;
@@ -71,8 +119,9 @@ export function render(root, options) {
         break;
       case "concat": {
         let sum = 0;
-        for (let i = 0; i < doc.parts.length; i += 1) {
-          sum += flatWidth(doc.parts[i]);
+        const parts = doc.parts;
+        for (let i = 0; i < parts.length; i += 1) {
+          sum += flatWidth(parts[i]);
         }
         width = sum;
         break;
@@ -94,10 +143,10 @@ export function render(root, options) {
 
   function write(value) {
     output.push(value);
-    const lines = value.split(/\r\n|\r|\n/);
+    const nl = value.lastIndexOf("\n");
 
-    if (lines.length > 1) {
-      column = columns(lines.at(-1), 0, tabWidth);
+    if (nl >= 0) {
+      column = columns(value.slice(nl + 1), 0, tabWidth);
     } else {
       column = columns(value, column, tabWidth);
     }
@@ -109,17 +158,22 @@ export function render(root, options) {
     }
 
     if (pendingIndent !== undefined) {
-      write(indentUnit.repeat(pendingIndent));
+      write(getIndentString(indentUnit, pendingIndent));
       pendingIndent = undefined;
     }
 
     write(value);
   }
 
-  const pending = [{ doc: root, mode: "break", depth: 0 }];
+  // Parallel arrays simulate an iterative worklist without allocating { doc, mode, depth } objects on the heap
+  const pendingDocs = [root];
+  const pendingModes = ["break"];
+  const pendingDepths = [0];
 
-  while (pending.length > 0) {
-    const { doc, mode, depth } = pending.pop();
+  while (pendingDocs.length > 0) {
+    const doc = pendingDocs.pop();
+    const mode = pendingModes.pop();
+    const depth = pendingDepths.pop();
 
     switch (doc.type) {
       case "verbatim":
@@ -145,27 +199,37 @@ export function render(root, options) {
 
         break;
       }
-      case "concat":
-        for (let index = doc.parts.length - 1; index >= 0; index -= 1) {
-          pending.push({ doc: doc.parts[index], mode, depth });
+      case "concat": {
+        const parts = doc.parts;
+        for (let index = parts.length - 1; index >= 0; index -= 1) {
+          pendingDocs.push(parts[index]);
+          pendingModes.push(mode);
+          pendingDepths.push(depth);
         }
 
         break;
+      }
       case "indent":
-        pending.push({ doc: doc.contents, mode, depth: depth + doc.levels });
+        pendingDocs.push(doc.contents);
+        pendingModes.push(mode);
+        pendingDepths.push(depth + doc.levels);
         break;
       case "group": {
         // An explicit child break must survive a flat enclosing group.
         const effectiveColumn = pendingIndent === undefined ? column :
-          columns(indentUnit.repeat(pendingIndent), column, tabWidth);
+          columns(getIndentString(indentUnit, pendingIndent), column, tabWidth);
         const nextMode = doc.mode === "always" ? "break" :
           mode === "flat" || doc.mode === "never" ? "flat" :
           flatWidth(doc.contents) <= printWidth - effectiveColumn ? "flat" : "break";
-        pending.push({ doc: doc.contents, mode: nextMode, depth });
+        pendingDocs.push(doc.contents);
+        pendingModes.push(nextMode);
+        pendingDepths.push(depth);
         break;
       }
       case "ifBreak":
-        pending.push({ doc: mode === "break" ? doc.broken : doc.flat, mode, depth });
+        pendingDocs.push(mode === "break" ? doc.broken : doc.flat);
+        pendingModes.push(mode);
+        pendingDepths.push(depth);
         break;
       default:
         throw new TypeError("Unknown document node");

@@ -18,7 +18,15 @@
  */
 import { KEYWORDS, PUNCTUATION } from "./lexicon.generated.mjs";
 
-const BACKTICK = String.fromCharCode(96);
+/** ASCII character for raw string literal boundary (`). */
+const BACKTICK = "`";
+
+/** Length of an escaped character sequence `\c` inside string literals. */
+const ESCAPE_SEQUENCE_LENGTH = 2;
+
+/** Unicode Byte Order Mark (BOM) disallowed by the FC grammar. */
+const UTF8_BOM = "\uFEFF";
+
 const NUMBER = /^(?:0[xX][0-9a-fA-F_]+(?:\.[0-9a-fA-F_]*)?(?:[pP][+-]?[0-9_]+)?|0[bB][01_]+|0[oO][0-7_]+|(?:[0-9][0-9_]*\.[0-9_]*|\.[0-9][0-9_]*)(?:[eE][+-]?[0-9_]+)?|[0-9][0-9_]*[eE][+-]?[0-9_]+|[0-9][0-9_]*)/;
 const NUMBER_STICKY = new RegExp(NUMBER.source.slice(1), "y");
 const IDENT_START = /[A-Za-z_]/;
@@ -42,7 +50,7 @@ function quotedEnd(source, start, quote) {
 
   while (end < source.length) {
     if (source[end] === "\\") {
-      end += Math.min(2, source.length - end);
+      end += Math.min(ESCAPE_SEQUENCE_LENGTH, source.length - end);
       continue;
     }
 
@@ -156,7 +164,7 @@ export function lexSource(source) {
   while (offset < source.length) {
     const char = source[offset];
 
-    if (char === "\uFEFF") {
+    if (char === UTF8_BOM) {
       error("unexpected-bom", "UTF-8 BOM is not accepted by FC grammar 1.11.0", offset + 1);
       continue;
     }

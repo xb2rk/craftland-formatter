@@ -43,17 +43,51 @@ import { extractSymbols, extractImports, flattenSymbols, extractFoldingRanges } 
  * }} DefinitionLocation
  */
 
+/** Scoring constants for ranked workspace symbol search (Ctrl + T). */
+const SCORE_EXACT_MATCH = 1000;
+const SCORE_PREFIX_MATCH = 500;
+const SCORE_EXACT_CASE_MATCH = 250;
+const SCORE_SUBSTRING_MATCH = 100;
+const BONUS_PRIMARY_DECL = 40; // Graph, Tuple, Enum
+const BONUS_FUNCTION = 20;     // Function
+const LENGTH_NORMALIZATION_BASE = 50;
+
+/** Check cancellation token every N symbols to avoid stalling quick keystrokes. */
+const CANCELLATION_CHECK_INTERVAL = 1000;
+
+/** Number of files indexed between event loop setImmediate yields during warmup. */
+const WARMUP_YIELD_INTERVAL = 15;
+
 /** In-memory cache of parsed file symbols keyed by absolute file path. */
 const fileIndexCache = new Map();
 
+/** Map of normalized file path -> Array of SymbolFlatRecord */
+const fileSymbolsMap = new Map();
+
+/** Map of filename (lowercase) -> absolute file path for O(1) import resolution */
+const fileNameToPathMap = new Map();
+
+/** Flattened array of all workspace symbols across all indexed files */
+let workspaceSymbolList = [];
+let workspaceSymbolsDirty = false;
+
 /** Cache of workspace Assets root directory. */
 let cachedAssetsRoot = null;
+
+/** Cache of workspace files to avoid rescanning directory tree on every keystroke. */
+let cachedFileList = null;
+let cachedFileListRoot = null;
+
 
 /**
  * Clear all cached index entries. Useful for tests or configuration reloads.
  */
 export function clearIndexCache() {
   fileIndexCache.clear();
+  fileSymbolsMap.clear();
+  fileNameToPathMap.clear();
+  workspaceSymbolList = [];
+  workspaceSymbolsDirty = false;
   cachedAssetsRoot = null;
   cachedFileList = null;
   cachedFileListRoot = null;
@@ -135,13 +169,18 @@ export function getFileIndex(absolutePath, overrideContent = null) {
   const normalized = path.normalize(absolutePath);
 
   try {
+    const cached = fileIndexCache.get(normalized);
     let mtime = 0;
-    if (overrideContent === null) {
+
+    if (overrideContent !== null) {
+      if (cached && cached.source === overrideContent) {
+        return cached;
+      }
+    } else {
       if (!fs.existsSync(normalized)) {
         return null;
       }
       mtime = fs.statSync(normalized).mtimeMs;
-      const cached = fileIndexCache.get(normalized);
       if (cached && cached.mtimeMs === mtime) {
         return cached;
       }
@@ -161,10 +200,11 @@ export function getFileIndex(absolutePath, overrideContent = null) {
     if (!parsed?.tree || !parsed.tree.children?.length) {
       // If parsing fails during typing, salvage imports and reuse previous cached symbols if available
       const fallbackImports = fallbackExtractImports(source);
-      const previous = fileIndexCache.get(normalized);
+      const previous = cached;
 
       const entry = {
         mtimeMs: mtime,
+        source,
         symbols: previous?.symbols ?? [],
         imports: fallbackImports.length > 0 ? fallbackImports : (previous?.imports ?? []),
         flatSymbols: previous?.flatSymbols ?? new Map(),
@@ -190,6 +230,7 @@ export function getFileIndex(absolutePath, overrideContent = null) {
 
     const entry = {
       mtimeMs: mtime,
+      source,
       symbols,
       imports: allImports,
       flatSymbols,
@@ -198,6 +239,22 @@ export function getFileIndex(absolutePath, overrideContent = null) {
     };
 
     fileIndexCache.set(normalized, entry);
+
+    const flatList = [];
+    for (const sym of flatSymbols.values()) {
+      flatList.push({
+        name: sym.name,
+        lowerName: sym.name.toLowerCase(),
+        kind: sym.kind,
+        containerName: sym.parentName ?? path.basename(normalized),
+        filePath: normalized,
+        range: sym.range,
+      });
+    }
+    fileSymbolsMap.set(normalized, flatList);
+    fileNameToPathMap.set(path.basename(normalized).toLowerCase(), normalized);
+    workspaceSymbolsDirty = true;
+
     return entry;
   } catch {
     return null;
@@ -281,9 +338,17 @@ export function resolveImportPath(currentFilePath, rawImportPath) {
       }
     }
 
+    // Fast O(1) in-memory lookup before walking directory tree
+    const baseNameLower = path.basename(rawImportPath).toLowerCase();
+    const mapped = fileNameToPathMap.get(baseNameLower);
+    if (mapped && fs.existsSync(mapped)) {
+      return mapped;
+    }
+
     // Deeper tree search inside Assets
     const found = findFileInTree(assetsDir, path.basename(rawImportPath));
     if (found) {
+      fileNameToPathMap.set(baseNameLower, found);
       return found;
     }
   }
@@ -665,6 +730,7 @@ function scanWorkspaceFcFiles(dir, list = []) {
         }
       } else if (/\.(fcg|fcc)$/i.test(entry.name)) {
         list.push(fullPath);
+        fileNameToPathMap.set(entry.name.toLowerCase(), fullPath);
       }
     }
   } catch {
@@ -674,9 +740,19 @@ function scanWorkspaceFcFiles(dir, list = []) {
   return list;
 }
 
-/** Cache of workspace files to avoid rescanning directory tree on every keystroke. */
-let cachedFileList = null;
-let cachedFileListRoot = null;
+
+/**
+ * Rebuild the unified in-memory symbol list from all indexed files.
+ */
+function rebuildWorkspaceSymbolList() {
+  workspaceSymbolList = [];
+  for (const symbols of fileSymbolsMap.values()) {
+    for (let i = 0; i < symbols.length; i++) {
+      workspaceSymbolList.push(symbols[i]);
+    }
+  }
+  workspaceSymbolsDirty = false;
+}
 
 /**
  * Search symbols matching query across the entire workspace (for Ctrl + T).
@@ -684,9 +760,10 @@ let cachedFileListRoot = null;
  * @param {string} startPath
  * @param {string} query
  * @param {number} [maxResults=50]
+ * @param {() => boolean} [cancellationChecker]
  * @returns {{ name: string, kind: string, containerName: string, filePath: string, range: import("./extractor.mjs").SourceRange }[]}
  */
-export function searchWorkspaceSymbols(startPath, query, maxResults = 50) {
+export function searchWorkspaceSymbols(startPath, query, maxResults = 50, cancellationChecker = null) {
   if (!startPath || !query || query.trim().length === 0) {
     return [];
   }
@@ -697,29 +774,115 @@ export function searchWorkspaceSymbols(startPath, query, maxResults = 50) {
     cachedFileListRoot = root;
   }
 
-  const lowerQuery = query.toLowerCase();
-  const results = [];
-
-  for (const filePath of cachedFileList) {
-    const index = getFileIndex(filePath);
-    if (!index) continue;
-
-    for (const sym of index.flatSymbols.values()) {
-      if (sym.name.toLowerCase().includes(lowerQuery)) {
-        results.push({
-          name: sym.name,
-          kind: sym.kind,
-          containerName: sym.parentName ?? path.basename(filePath),
-          filePath,
-          range: sym.range,
-        });
-
-        if (results.length >= maxResults) {
-          return results;
-        }
-      }
+  // Ensure all workspace files have been indexed into memory
+  for (let i = 0; i < cachedFileList.length; i++) {
+    if (cancellationChecker?.()) return [];
+    const filePath = cachedFileList[i];
+    if (!fileIndexCache.has(filePath)) {
+      getFileIndex(filePath);
     }
   }
 
-  return results;
+  if (workspaceSymbolsDirty) {
+    rebuildWorkspaceSymbolList();
+  }
+
+  const lowerQuery = query.toLowerCase();
+  const scored = [];
+
+  for (let i = 0; i < workspaceSymbolList.length; i++) {
+    // Check cancellation periodically to abort promptly when user continues typing
+    if (i % CANCELLATION_CHECK_INTERVAL === 0 && cancellationChecker?.()) {
+      return [];
+    }
+
+    const sym = workspaceSymbolList[i];
+    const lowerName = sym.lowerName;
+    if (!lowerName.includes(lowerQuery)) {
+      continue;
+    }
+
+    let score = 0;
+    if (lowerName === lowerQuery) {
+      score = SCORE_EXACT_MATCH;
+    } else if (lowerName.startsWith(lowerQuery)) {
+      score = SCORE_PREFIX_MATCH + Math.max(0, LENGTH_NORMALIZATION_BASE - sym.name.length);
+    } else if (sym.name.includes(query)) {
+      score = SCORE_EXACT_CASE_MATCH + Math.max(0, LENGTH_NORMALIZATION_BASE - sym.name.length);
+    } else {
+      score = SCORE_SUBSTRING_MATCH + Math.max(0, LENGTH_NORMALIZATION_BASE - sym.name.length);
+    }
+
+    if (sym.kind === "Graph" || sym.kind === "Tuple" || sym.kind === "Enum") {
+      score += BONUS_PRIMARY_DECL;
+    } else if (sym.kind === "Function") {
+      score += BONUS_FUNCTION;
+    }
+
+    scored.push({ sym, score });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, maxResults).map((s) => s.sym);
+}
+
+/**
+ * Asynchronously warm up the workspace symbol index in small non-blocking chunks.
+ *
+ * @param {string} startPath
+ * @param {() => boolean} [cancellationChecker]
+ * @returns {Promise<void>}
+ */
+export async function warmupWorkspaceIndex(startPath, cancellationChecker = null) {
+  if (!startPath) return;
+  const root = findAssetsRoot(startPath) ?? path.resolve(startPath);
+  if (!cachedFileList || cachedFileListRoot !== root) {
+    cachedFileList = scanWorkspaceFcFiles(root);
+    cachedFileListRoot = root;
+  }
+
+  for (let i = 0; i < cachedFileList.length; i++) {
+    if (cancellationChecker?.()) return;
+    const filePath = cachedFileList[i];
+    if (!fileIndexCache.has(filePath)) {
+      getFileIndex(filePath);
+    }
+    // Yield every N files to keep the VS Code event loop responsive
+    if (i % WARMUP_YIELD_INTERVAL === 0) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+  }
+
+  if (workspaceSymbolsDirty) {
+    rebuildWorkspaceSymbolList();
+  }
+}
+
+/**
+ * Update the index entry for a single file (e.g. on file save or document change).
+ *
+ * @param {string} filePath
+ * @param {string} [overrideContent]
+ */
+export function updateFileIndex(filePath, overrideContent = null) {
+  if (!filePath) return;
+  const normalized = path.normalize(filePath);
+  getFileIndex(normalized, overrideContent);
+}
+
+/**
+ * Remove a deleted file from the symbol index.
+ *
+ * @param {string} filePath
+ */
+export function removeFileFromIndex(filePath) {
+  if (!filePath) return;
+  const normalized = path.normalize(filePath);
+  fileIndexCache.delete(normalized);
+  fileSymbolsMap.delete(normalized);
+  fileNameToPathMap.delete(path.basename(normalized).toLowerCase());
+  workspaceSymbolsDirty = true;
+  if (cachedFileList) {
+    cachedFileList = cachedFileList.filter((f) => f !== normalized);
+  }
 }

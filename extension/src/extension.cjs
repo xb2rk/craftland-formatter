@@ -92,6 +92,42 @@ function minimalEdit(document, output, vscode) {
   return [vscode.TextEdit.replace(range, output.slice(start, newEnd))];
 }
 
+/** ASCII newline codes for fast EOL scanning without allocating regex match arrays. */
+const CHAR_LF = 10; // '\n' Line Feed
+const CHAR_CR = 13; // '\r' Carriage Return
+
+/**
+ * Scans a formatted output string to determine whether its line endings are uniformly LF, CRLF, or mixed.
+ * Avoids allocating arrays of matched newline strings on large documents.
+ *
+ * @param {string} text - Formatted source string.
+ * @returns {{ isMixed: boolean, eol: "\r\n" | "\n" | null }}
+ */
+function checkEolConsistency(text) {
+  let hasLf = false;
+  let hasCrlf = false;
+  let hasCr = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charCodeAt(i);
+    if (ch === CHAR_CR) {
+      if (i + 1 < text.length && text.charCodeAt(i + 1) === CHAR_LF) {
+        hasCrlf = true;
+        i += 1;
+      } else {
+        hasCr = true;
+      }
+    } else if (ch === CHAR_LF) {
+      hasLf = true;
+    }
+  }
+
+  if (hasCr || (hasLf && hasCrlf)) {
+    return { isMixed: true, eol: null };
+  }
+  return { isMixed: false, eol: hasCrlf ? "\r\n" : hasLf ? "\n" : null };
+}
+
 /** VS Code has one EOL mode per document, while the core can preserve mixed bytes. */
 function editorEdits(document, output, vscode, { allowEolChange = false } = {}) {
   const replacements = minimalEdit(document, output, vscode);
@@ -100,10 +136,9 @@ function editorEdits(document, output, vscode, { allowEolChange = false } = {}) 
     return { edits: [], error: null, targetEol: null };
   }
 
-  const endings = output.match(/\r\n|\r|\n/g) ?? [];
-  const first = endings[0];
+  const { isMixed, eol } = checkEolConsistency(output);
 
-  if (first === "\r" || endings.some((ending) => ending !== first)) {
+  if (isMixed) {
     return {
       edits: [],
       error: "VS Code cannot preserve mixed or CR-only line endings in this file. Use the CLI.",
@@ -111,8 +146,8 @@ function editorEdits(document, output, vscode, { allowEolChange = false } = {}) 
     };
   }
 
-  const targetEol = first === "\r\n" ? vscode.EndOfLine.CRLF : vscode.EndOfLine.LF;
-  const needsEolChange = first && document.eol !== targetEol;
+  const targetEol = eol === "\r\n" ? vscode.EndOfLine.CRLF : vscode.EndOfLine.LF;
+  const needsEolChange = eol && document.eol !== targetEol;
 
   if (needsEolChange && !allowEolChange) {
     return {
@@ -210,6 +245,8 @@ function rangeEdits(document, output, range, vscode, core) {
 
 /** Convert a core SymbolNode to a VS Code DocumentSymbol with hierarchy. */
 function toVsCodeSymbol(symbol, vscode) {
+  // Fallback numbers correspond to Microsoft LSP SymbolKind specification values
+  // for reliable testing in headless Node environments without active VS Code UI runtime.
   const kindMap = {
     Graph: vscode.SymbolKind?.Class ?? 4,
     Function: vscode.SymbolKind?.Function ?? 11,
@@ -318,8 +355,10 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
       const vsConfig = vscode?.workspace?.getConfiguration ? vscode.workspace.getConfiguration("fc-format", document.uri) : null;
       const linterEnabled = vsConfig?.get("linter.enabled") === true;
 
-      if (linterEnabled && core.lintSource) {
-        const lintResult = core.lintSource(document.getText(), {}, document.uri.fsPath);
+      if (linterEnabled) {
+        const lintResult = core.lintDocument
+          ? core.lintDocument(parseResult, document.getText(), {}, document.uri.fsPath)
+          : core.lintSource?.(document.getText(), {}, document.uri.fsPath);
         if (lintResult?.diagnostics) {
           allIssues.push(...lintResult.diagnostics);
         }
@@ -804,12 +843,25 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
       },
     }),
     vscode.languages.registerWorkspaceSymbolProvider({
-      provideWorkspaceSymbols(query) {
+      provideWorkspaceSymbols(query, token) {
         if (!core?.searchWorkspaceSymbols || !query || query.trim().length === 0) return [];
-        const workspaceRoot = vscode.workspace?.workspaceFolders?.[0]?.uri?.fsPath ?? "";
-        if (!workspaceRoot) return [];
+        if (token?.isCancellationRequested) return [];
 
-        const results = core.searchWorkspaceSymbols(workspaceRoot, query);
+        const folders = vscode.workspace?.workspaceFolders ?? [];
+        if (folders.length === 0) return [];
+
+        const cancellationChecker = () => token?.isCancellationRequested ?? false;
+        const results = [];
+
+        for (const folder of folders) {
+          if (token?.isCancellationRequested) return [];
+          const folderPath = folder?.uri?.fsPath ?? "";
+          if (!folderPath) continue;
+          const folderResults = core.searchWorkspaceSymbols(folderPath, query, 50, cancellationChecker);
+          results.push(...folderResults);
+          if (results.length >= 50) break;
+        }
+
         const kindMap = {
           Graph: vscode.SymbolKind?.Class ?? 4,
           Function: vscode.SymbolKind?.Function ?? 11,
@@ -824,7 +876,7 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
           Import: vscode.SymbolKind?.Module ?? 1,
         };
 
-        return results.map((r) => {
+        return results.slice(0, 50).map((r) => {
           const range = new vscode.Range(
             new vscode.Position(Math.max(0, (r.range?.line ?? 1) - 1), Math.max(0, r.range?.column ?? 0)),
             new vscode.Position(Math.max(0, (r.range?.endLine ?? 1) - 1), Math.max(0, r.range?.endColumn ?? 0))
@@ -890,6 +942,42 @@ function createExtension(vscode, core, context, { diagnosticDelayMs = DIAGNOSTIC
     );
   }
 
+  // Low-priority background warm-up of symbol index
+  if (core?.warmupWorkspaceIndex) {
+    const folders = vscode.workspace?.workspaceFolders ?? [];
+    for (const folder of folders) {
+      const folderPath = folder?.uri?.fsPath;
+      if (folderPath) {
+        setTimeout(() => {
+          core.warmupWorkspaceIndex(folderPath).catch(() => {});
+        }, 500);
+      }
+    }
+  }
+
+  // Incremental symbol index updates on file save and file lifecycle
+  if (vscode.workspace?.onDidSaveTextDocument) {
+    context.subscriptions.push(
+      vscode.workspace.onDidSaveTextDocument((doc) => {
+        if (isFcDocument(doc) && core?.updateFileIndex) {
+          core.updateFileIndex(doc.uri.fsPath, doc.getText());
+        }
+      })
+    );
+  }
+
+  if (vscode.workspace?.onDidDeleteFiles) {
+    context.subscriptions.push(
+      vscode.workspace.onDidDeleteFiles((event) => {
+        if (core?.removeFileFromIndex) {
+          for (const file of event.files ?? []) {
+            core.removeFileFromIndex(file.fsPath);
+          }
+        }
+      })
+    );
+  }
+
   for (const document of vscode.workspace.textDocuments) {
     scheduleDiagnostics(document);
   }
@@ -916,6 +1004,7 @@ async function activate(context) {
     parseSource: syntax.parseSource,
     computeLineHunks: diff.computeLineHunks,
     lintSource: lint.lintSource,
+    lintDocument: lint.lintDocument,
     organizeImports: imports.organizeImports,
     extractSymbols: symbols.extractSymbols,
     getFileIndex: indexer.getFileIndex,
@@ -927,6 +1016,9 @@ async function activate(context) {
     getDocumentLinks: indexer.getDocumentLinks,
     getSignatureHelp: indexer.getSignatureHelp,
     searchWorkspaceSymbols: indexer.searchWorkspaceSymbols,
+    warmupWorkspaceIndex: indexer.warmupWorkspaceIndex,
+    updateFileIndex: indexer.updateFileIndex,
+    removeFileFromIndex: indexer.removeFileFromIndex,
   }, context);
 }
 

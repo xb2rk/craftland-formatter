@@ -177,7 +177,40 @@ function makeRange(startToken, endToken = startToken) {
 }
 
 /**
- * Find all tokens belonging to the given offset span.
+ * Binary search for the first token whose start offset is >= target start.
+ *
+ * @param {readonly Token[]} tokens
+ * @param {number} start
+ * @returns {number}
+ */
+/**
+ * Finds the index of the first token starting at or after the given character offset.
+ *
+ * @param {readonly Token[]} tokens - Sorted array of tokens.
+ * @param {number} start - Target character start offset.
+ * @returns {number} Index of first matching token, or `tokens.length` if none.
+ */
+function findFirstTokenIndex(tokens, start) {
+  let low = 0;
+  let high = tokens.length - 1;
+  let result = tokens.length;
+
+  while (low <= high) {
+    // Fast integer division by 2 for binary search midpoint
+    const mid = (low + high) >> 1;
+    if (tokens[mid].start >= start) {
+      result = mid;
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Find all tokens belonging to the given offset span using O(log N) binary search.
  *
  * @param {readonly Token[]} tokens
  * @param {number} start
@@ -186,10 +219,19 @@ function makeRange(startToken, endToken = startToken) {
  * @returns {Token[]}
  */
 function getTokensInRange(tokens, start, end, syntaxOnly = true) {
-  return tokens.filter((t) => {
-    if (syntaxOnly && t.channel !== "syntax") return false;
-    return t.start >= start && t.end <= end;
-  });
+  if (!tokens || tokens.length === 0) return [];
+  const first = findFirstTokenIndex(tokens, start);
+  const out = [];
+
+  for (let i = first; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.start > end) break;
+    if (t.end <= end && (!syntaxOnly || t.channel === "syntax")) {
+      out.push(t);
+    }
+  }
+
+  return out;
 }
 
 /**

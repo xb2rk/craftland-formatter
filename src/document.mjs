@@ -13,12 +13,37 @@
  *   { type: "ifBreak", broken: Doc, flat: Doc }} Doc
  */
 
+/** Pre-allocated immutable Doc singletons for common layout primitives. */
 export const line = Object.freeze({ type: "line" });
 export const softline = Object.freeze({ type: "softline" });
 export const hardline = Object.freeze({ type: "hardline" });
 
-/** @param {string} value @returns {Doc} */
+/**
+ * Pre-allocated immutable text Doc singletons for common whitespace and empty strings.
+ * Reusing these singletons eliminates thousands of short-lived object allocations
+ * during AST printing and separator formatting.
+ */
+export const emptyText = Object.freeze({ type: "text", value: "" });
+export const spaceText = Object.freeze({ type: "text", value: " " });
+export const twoSpacesText = Object.freeze({ type: "text", value: "  " });
+
+/**
+ * Creates a text Doc node, reusing static singletons for empty strings and single/double spaces.
+ *
+ * @param {string} value - Literal text content.
+ * @returns {Doc}
+ */
 export function text(value) {
+  if (value === "") {
+    return emptyText;
+  }
+  if (value === " ") {
+    return spaceText;
+  }
+  if (value === "  ") {
+    return twoSpacesText;
+  }
+
   return { type: "text", value };
 }
 

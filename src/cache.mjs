@@ -10,6 +10,12 @@ import * as fs from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
 /**
+ * Maximum timestamp discrepancy (in milliseconds) tolerated between stat calls.
+ * Necessary due to filesystem mtime sub-millisecond truncation jitter across OS platforms.
+ */
+const MTIME_TOLERANCE_MS = 1;
+
+/**
  * @typedef {Object} CacheEntry
  * @property {number} size File size in bytes.
  * @property {number} mtimeMs File last modified timestamp in milliseconds.
@@ -168,7 +174,7 @@ export class FormatCache {
 
     // Fast-path: When strategy is metadata, match size and modification time.
     if (this.strategy === "metadata") {
-      if (stats.size === entry.size && Math.abs(stats.mtimeMs - entry.mtimeMs) < 1) {
+      if (stats.size === entry.size && Math.abs(stats.mtimeMs - entry.mtimeMs) < MTIME_TOLERANCE_MS) {
         return true;
       }
     }
